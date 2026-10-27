@@ -622,6 +622,7 @@
         }
 
         activePaymentId = data.paymentId;
+        fetch(`/api/v1/checkout/${data.paymentId}/guest`, { method: 'POST' }).catch(() => {});
 
         // Hide pay card, show checkout view
         document.getElementById('initialPayCard').style.display = 'none';

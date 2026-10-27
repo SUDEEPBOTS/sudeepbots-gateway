@@ -271,7 +271,7 @@ export class PaymentVerificationPipeline {
       // 1. Try finding active or processing session for this specific receiving account
       if (input.receivingAccountId) {
         const row = this.db.queryOne(
-          `SELECT * FROM payment_sessions WHERE receiving_account_id = ? AND status IN ('ACTIVE', 'PROCESSING') ORDER BY created_at DESC LIMIT 1`,
+          `SELECT * FROM payment_sessions WHERE receiving_account_id = ? AND status IN ('ACTIVE', 'PROCESSING', 'INITIATED') ORDER BY created_at DESC LIMIT 1`,
           [input.receivingAccountId]
         );
         if (row) session = this.sessionRepo.mapRow(row);
@@ -283,7 +283,7 @@ export class PaymentVerificationPipeline {
         const row = this.db.queryOne(`
           SELECT ps.* FROM payment_sessions ps
           JOIN payment_receiving_accounts ra ON ps.receiving_account_id = ra.id
-          WHERE LOWER(ra.upi_id) = ? AND ps.status IN ('ACTIVE', 'PROCESSING')
+          WHERE LOWER(ra.upi_id) = ? AND ps.status IN ('ACTIVE', 'PROCESSING', 'INITIATED')
           ORDER BY ps.created_at DESC LIMIT 1
         `, [observedVpa]);
         if (row) session = this.sessionRepo.mapRow(row);
@@ -617,7 +617,7 @@ export class PaymentVerificationPipeline {
           SELECT * FROM payment_sessions
           WHERE receiving_account_id = ?
             AND amount_paise = ?
-            AND status IN ('ACTIVE', 'PROCESSING')
+            AND status IN ('ACTIVE', 'PROCESSING', 'INITIATED')
           ORDER BY created_at DESC LIMIT 1
         `, [input.receivingAccountId, Number(parsedData.amountPaise)]);
         if (matchRow) {
@@ -634,7 +634,7 @@ export class PaymentVerificationPipeline {
           const matchRow = this.db.queryOne(`
             SELECT ps.* FROM payment_sessions ps
             JOIN payment_receiving_accounts ra ON ps.receiving_account_id = ra.id
-            WHERE ps.status IN ('ACTIVE', 'PROCESSING')
+            WHERE ps.status IN ('ACTIVE', 'PROCESSING', 'INITIATED')
               AND ps.amount_paise = ?
               AND LOWER(ra.upi_id) = ?
             ORDER BY ps.created_at DESC LIMIT 1

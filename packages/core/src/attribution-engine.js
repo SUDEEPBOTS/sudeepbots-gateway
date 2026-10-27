@@ -701,40 +701,44 @@ export class AttributionEngine {
             return;
           }
 
-          // 5 seconds elapsed without second source: finalize as Level 1
-          const finalResult = this.sessionRepo.recordVerificationSource(
-            targetSessionId,
-            targetSource,
-            targetObsId,
-            { finalizeSuccess: true }
-          );
+          try {
+            // 5 seconds elapsed without second source: finalize as Level 1
+            const finalResult = this.sessionRepo.recordVerificationSource(
+              targetSessionId,
+              targetSource,
+              targetObsId,
+              { finalizeSuccess: true }
+            );
 
-          if (this.auditRepo) {
-            this.auditRepo.log({
+            if (this.auditRepo) {
+              this.auditRepo.log({
+                merchantId: targetMerchantId,
+                entityType: 'PAYMENT_SESSION',
+                entityId: targetSessionId,
+                action: 'PAYMENT_ATTRIBUTED_SUCCESS_L1',
+                actorType: 'SYSTEM',
+                details: {
+                  observationId: targetObsId,
+                  source: targetSource,
+                  verificationLevel: finalResult.level,
+                  verificationTag: finalResult.tag
+                }
+              });
+            }
+
+            this.eventEmitter.emit('PAYMENT.OBSERVED_SUCCESS', {
+              paymentId: targetSessionId,
+              orderId: targetOrderId,
               merchantId: targetMerchantId,
-              entityType: 'PAYMENT_SESSION',
-              entityId: targetSessionId,
-              action: 'PAYMENT_ATTRIBUTED_SUCCESS_L1',
-              actorType: 'SYSTEM',
-              details: {
-                observationId: targetObsId,
-                source: targetSource,
-                verificationLevel: finalResult.level,
-                verificationTag: finalResult.tag
-              }
+              amountPaise: targetAmountPaise,
+              observationId: targetObsId,
+              verificationLevel: finalResult.level,
+              verificationTag: finalResult.tag,
+              sources: finalResult.sources
             });
+          } catch (finalizeErr) {
+            console.error('[AttributionEngine] Finalize Level 1 error:', finalizeErr?.message || finalizeErr);
           }
-
-          this.eventEmitter.emit('PAYMENT.OBSERVED_SUCCESS', {
-            paymentId: targetSessionId,
-            orderId: targetOrderId,
-            merchantId: targetMerchantId,
-            amountPaise: targetAmountPaise,
-            observationId: targetObsId,
-            verificationLevel: finalResult.level,
-            verificationTag: finalResult.tag,
-            sources: finalResult.sources
-          });
         }, this.gracePeriodMs);
 
         if (graceTimer.unref) graceTimer.unref();
