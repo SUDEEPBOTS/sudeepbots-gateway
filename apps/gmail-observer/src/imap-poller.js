@@ -346,7 +346,15 @@ export class ImapPoller {
             internalDate: emailDate.getTime()
           };
 
-          await this.processEmail(emailObj);
+          try {
+            await this.processEmail(emailObj);
+          } catch (itemErr) {
+            console.warn('[FamPay/Gmail IMAP] Error processing email item, continuing loop:', redactSensitiveData(itemErr.message));
+            if (msgId) {
+              this.processedMessageIds.add(msgId);
+              this.saveProcessedIdsToDisk();
+            }
+          }
         }
       } finally {
         lock.release();
@@ -387,6 +395,10 @@ export class ImapPoller {
     } catch {}
 
     if (!parsed || !parsed.amountPaise) {
+      if (messageId) {
+        this.processedMessageIds.add(messageId);
+        this.saveProcessedIdsToDisk();
+      }
       return { accepted: false, rejected: true, reason: 'MALFORMED_OR_NON_CREDIT' };
     }
 
@@ -427,6 +439,10 @@ export class ImapPoller {
       console.log(`[FamPay/Gmail IMAP] Payment verified: ₹${parsed.amount} | UTR: ${parsed.bankReferenceNumber || 'N/A'} | Status: ${result.accepted ? 'ACCEPTED' : 'REJECTED'}`);
       return result;
     } catch (err) {
+      if (messageId) {
+        this.processedMessageIds.add(messageId);
+        this.saveProcessedIdsToDisk();
+      }
       console.error(`[FamPay/Gmail IMAP] Submission failed:`, redactSensitiveData(err.message));
       throw err;
     }

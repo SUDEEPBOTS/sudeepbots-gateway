@@ -146,8 +146,8 @@ export class BankEmailParser {
       return null; // Ignore non-credit alerts
     }
 
-    // Ignore pure debit notifications if no credit indicator exists
-    if (/(debited|withdrawn|sent rs|paid rs)/i.test(combinedText) && !/(credited|received|deposit)/i.test(combinedText)) {
+    // Ignore pure debit / outgoing payment notifications if no credit indicator exists
+    if (/(debited|withdrawn|sent\b|paid\b|payment of)/i.test(combinedText) && !/(credited|received|deposit|added to)/i.test(combinedText)) {
       return null;
     }
 
