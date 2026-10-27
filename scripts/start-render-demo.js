@@ -70,6 +70,21 @@ proxy.listen(RENDER_PORT, '0.0.0.0', () => {
   console.log(`[✓] Public Render gateway listening on port ${RENDER_PORT}`);
 });
 
+// Keep-alive pinger: prevents Render free tier from sleeping (pings every 8 minutes)
+const PING_INTERVAL_MS = 8 * 60 * 1000;
+const publicHealthUrl = process.env.RENDER_EXTERNAL_URL
+  ? `${process.env.RENDER_EXTERNAL_URL}/health`
+  : 'https://sudeepbots-gateway.onrender.com/health';
+
+setInterval(async () => {
+  try {
+    const https = await import('node:https');
+    https.get(publicHealthUrl, (res) => {
+      console.log(`[Keep-Alive 24/7] Pinged ${publicHealthUrl} -> HTTP ${res.statusCode}`);
+    }).on('error', () => {});
+  } catch {}
+}, PING_INTERVAL_MS);
+
 // Graceful shutdown
 const shutdown = async () => {
   console.log('\nShutting down Render gateway cleanly...');
