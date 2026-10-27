@@ -310,13 +310,13 @@ describe('resolveDefaultBranding', () => {
     delete process.env.DEFAULT_FOOTER_GUARANTEE;
 
     const b = resolveDefaultBranding();
-    assert.equal(b.appName, 'YOUPI PG');
+    assert.equal(b.appName, 'SudeepBots Gateway');
     assert.equal(b.primaryColor, '#2563eb');
-    assert.equal(b.supportEmail, 'support@youpi.local');
+    assert.equal(b.supportEmail, 'support@sudeepbots.com');
     assert.equal(b.supportPhone, '9876543210');
     assert.equal(b.logoUrl, null);
-    assert.equal(b.trustBadgeText, 'YOUPI PG Verified Business');
-    assert.equal(b.footerGuarantee, '100% Payment Protection by YOUPI PG');
+    assert.equal(b.trustBadgeText, 'SudeepBots Gateway Verified Business');
+    assert.equal(b.footerGuarantee, '100% Payment Protection by SudeepBots Gateway');
   });
 
   test('honors environment variable overrides', () => {

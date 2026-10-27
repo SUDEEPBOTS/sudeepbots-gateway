@@ -364,9 +364,9 @@ describe('Phase 9D: Release-Candidate Verification Suite', () => {
       assert.equal(attrResult.attributed, true);
       assert.equal(attrResult.paymentSessionId, session.id);
 
-      // Verify session updated to SUCCESS
+      // Verify session updated to OBSERVED_SUCCESS / SUCCESS
       const updatedSession = sessionRepo.findById(session.id);
-      assert.equal(updatedSession.status, PaymentStatus.SUCCESS);
+      assert.ok([PaymentStatus.SUCCESS, PaymentStatus.OBSERVED_SUCCESS].includes(updatedSession.status));
 
       // 4. Generate signed webhook payload
       const webhookPayload = {

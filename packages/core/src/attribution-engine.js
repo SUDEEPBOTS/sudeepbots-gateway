@@ -115,6 +115,12 @@ export class AttributionEngine {
    * }}
    */
   processObservation(normalizedObs) {
+    if (normalizedObs?.amountPaise !== undefined && normalizedObs?.amountPaise !== null && typeof normalizedObs.amountPaise !== 'bigint') {
+      try {
+        normalizedObs = { ...normalizedObs, amountPaise: BigInt(normalizedObs.amountPaise) };
+      } catch {}
+    }
+
     // Tier 1: Check fingerprint for deduplication
     const existing = this.obsRepo.findByFingerprint(normalizedObs.fingerprintHash);
     if (existing) {
@@ -596,8 +602,8 @@ export class AttributionEngine {
           sources: verifyResult.sources
         });
 
-        // If grace period is 0 (e.g. in instant tests), finalize immediately
-        if (this.verificationPolicy === 'SINGLE_CHANNEL_VALIDATED_GMAIL' || this.gracePeriodMs <= 0) {
+        // If grace period is 0 (e.g. in instant tests), finalize immediately UNLESS policy requires dual channel
+        if (this.verificationPolicy !== 'REQUIRE_DUAL_CHANNEL' && (this.verificationPolicy === 'SINGLE_CHANNEL_VALIDATED_GMAIL' || this.gracePeriodMs <= 0)) {
           const finalResult = this.sessionRepo.recordVerificationSource(
             currentSession.id,
             normalizedObs.source,
@@ -688,6 +694,10 @@ export class AttributionEngine {
           }
 
           if (alreadyObserved) {
+            return;
+          }
+
+          if (this.verificationPolicy === 'REQUIRE_DUAL_CHANNEL') {
             return;
           }
 

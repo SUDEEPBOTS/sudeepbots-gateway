@@ -1,0 +1,715 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>SudeepBots Gateway — Live ₹2 FamPay Test</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&family=JetBrains+Mono:wght@500;700&display=swap" rel="stylesheet">
+  <style>
+    :root {
+      --bg: #090d16;
+      --card-bg: rgba(18, 24, 38, 0.85);
+      --card-border: rgba(255, 255, 255, 0.08);
+      --accent: #2563eb;
+      --accent-glow: rgba(37, 99, 235, 0.35);
+      --success: #10b981;
+      --success-glow: rgba(16, 185, 129, 0.3);
+      --warning: #f59e0b;
+      --text-main: #f8fafc;
+      --text-muted: #94a3b8;
+      --font: 'Plus Jakarta Sans', -apple-system, BlinkMacSystemFont, sans-serif;
+      --mono: 'JetBrains Mono', monospace;
+    }
+
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+    }
+
+    body {
+      background: var(--bg);
+      background-image: 
+        radial-gradient(circle at 15% 15%, rgba(37, 99, 235, 0.12) 0%, transparent 40%),
+        radial-gradient(circle at 85% 85%, rgba(16, 185, 129, 0.08) 0%, transparent 40%);
+      color: var(--text-main);
+      font-family: var(--font);
+      min-height: 100vh;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      padding: 2.5rem 1rem;
+    }
+
+    .container {
+      width: 100%;
+      max-width: 640px;
+      display: flex;
+      flex-direction: column;
+      gap: 1.5rem;
+    }
+
+    .header {
+      text-align: center;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 0.6rem;
+    }
+
+    .badge-bar {
+      display: flex;
+      gap: 0.5rem;
+      flex-wrap: wrap;
+      justify-content: center;
+    }
+
+    .badge {
+      display: inline-flex;
+      align-items: center;
+      gap: 0.4rem;
+      padding: 0.3rem 0.75rem;
+      border-radius: 9999px;
+      font-size: 0.75rem;
+      font-weight: 700;
+      letter-spacing: 0.02em;
+      text-transform: uppercase;
+    }
+
+    .badge-success {
+      background: rgba(16, 185, 129, 0.15);
+      color: #34d399;
+      border: 1px solid rgba(16, 185, 129, 0.3);
+    }
+
+    .badge-blue {
+      background: rgba(37, 99, 235, 0.15);
+      color: #60a5fa;
+      border: 1px solid rgba(37, 99, 235, 0.3);
+    }
+
+    .title {
+      font-size: 1.85rem;
+      font-weight: 800;
+      letter-spacing: -0.02em;
+      background: linear-gradient(135deg, #ffffff 40%, #94a3b8 100%);
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+    }
+
+    .subtitle {
+      color: var(--text-muted);
+      font-size: 0.95rem;
+      max-width: 480px;
+      line-height: 1.5;
+    }
+
+    .card {
+      background: var(--card-bg);
+      border: 1px solid var(--card-border);
+      border-radius: 1.25rem;
+      padding: 1.5rem;
+      backdrop-filter: blur(16px);
+      box-shadow: 0 20px 40px -15px rgba(0, 0, 0, 0.5);
+    }
+
+    .card-title {
+      font-size: 1.05rem;
+      font-weight: 700;
+      margin-bottom: 1rem;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+    }
+
+    .form-group {
+      display: flex;
+      flex-direction: column;
+      gap: 0.4rem;
+      margin-bottom: 1rem;
+    }
+
+    label {
+      font-size: 0.8rem;
+      font-weight: 600;
+      color: var(--text-muted);
+      text-transform: uppercase;
+      letter-spacing: 0.05em;
+    }
+
+    .input-row {
+      display: flex;
+      gap: 0.5rem;
+    }
+
+    input[type="text"] {
+      flex: 1;
+      background: rgba(255, 255, 255, 0.04);
+      border: 1px solid rgba(255, 255, 255, 0.1);
+      border-radius: 0.75rem;
+      padding: 0.75rem 1rem;
+      font-family: var(--mono);
+      font-size: 0.95rem;
+      color: var(--text-main);
+      outline: none;
+      transition: all 0.2s;
+    }
+
+    input[type="text"]:focus {
+      border-color: var(--accent);
+      box-shadow: 0 0 0 3px var(--accent-glow);
+    }
+
+    .btn-secondary {
+      background: rgba(255, 255, 255, 0.08);
+      color: #fff;
+      border: 1px solid rgba(255, 255, 255, 0.12);
+      border-radius: 0.75rem;
+      padding: 0.75rem 1.25rem;
+      font-size: 0.85rem;
+      font-weight: 600;
+      cursor: pointer;
+      transition: all 0.2s;
+      white-space: nowrap;
+    }
+
+    .btn-secondary:hover {
+      background: rgba(255, 255, 255, 0.15);
+    }
+
+    .pay-card {
+      text-align: center;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      padding: 2rem 1.5rem;
+      gap: 1.25rem;
+    }
+
+    .price-pill {
+      display: flex;
+      align-items: baseline;
+      gap: 0.25rem;
+    }
+
+    .currency {
+      font-size: 1.5rem;
+      font-weight: 700;
+      color: #60a5fa;
+    }
+
+    .amount {
+      font-size: 3.5rem;
+      font-weight: 800;
+      letter-spacing: -0.04em;
+      line-height: 1;
+      color: #ffffff;
+    }
+
+    .btn-primary {
+      width: 100%;
+      background: linear-gradient(135deg, #2563eb, #1d4ed8);
+      color: #ffffff;
+      border: none;
+      border-radius: 0.85rem;
+      padding: 1rem 1.5rem;
+      font-size: 1.05rem;
+      font-weight: 700;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 0.5rem;
+      box-shadow: 0 10px 25px -5px var(--accent-glow);
+      transition: all 0.2s;
+    }
+
+    .btn-primary:hover {
+      transform: translateY(-2px);
+      box-shadow: 0 15px 30px -5px var(--accent-glow);
+    }
+
+    .btn-primary:active {
+      transform: translateY(0);
+    }
+
+    .checkout-view {
+      display: none;
+      flex-direction: column;
+      align-items: center;
+      gap: 1.25rem;
+      width: 100%;
+      animation: fadeIn 0.3s ease;
+    }
+
+    @keyframes fadeIn {
+      from { opacity: 0; transform: translateY(10px); }
+      to { opacity: 1; transform: translateY(0); }
+    }
+
+    .qr-box {
+      background: #ffffff;
+      padding: 1rem;
+      border-radius: 1rem;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      box-shadow: 0 15px 35px rgba(0, 0, 0, 0.4);
+      width: 220px;
+      height: 220px;
+    }
+
+    .qr-box img {
+      width: 100%;
+      height: 100%;
+      display: block;
+    }
+
+    .status-tracker {
+      width: 100%;
+      display: flex;
+      flex-direction: column;
+      gap: 0.75rem;
+      background: rgba(255, 255, 255, 0.03);
+      border-radius: 0.85rem;
+      padding: 1rem;
+      border: 1px solid rgba(255, 255, 255, 0.05);
+    }
+
+    .tracker-item {
+      display: flex;
+      align-items: center;
+      gap: 0.75rem;
+      font-size: 0.88rem;
+      color: var(--text-muted);
+    }
+
+    .tracker-item.active {
+      color: #60a5fa;
+      font-weight: 600;
+    }
+
+    .tracker-item.completed {
+      color: #34d399;
+    }
+
+    .tracker-dot {
+      width: 10px;
+      height: 10px;
+      border-radius: 50%;
+      background: rgba(255, 255, 255, 0.2);
+    }
+
+    .tracker-item.active .tracker-dot {
+      background: #3b82f6;
+      box-shadow: 0 0 10px #3b82f6;
+      animation: pulse 1.5s infinite;
+    }
+
+    .tracker-item.completed .tracker-dot {
+      background: #10b981;
+    }
+
+    @keyframes pulse {
+      0%, 100% { opacity: 1; transform: scale(1); }
+      50% { opacity: 0.5; transform: scale(1.3); }
+    }
+
+    .intent-btn-row {
+      display: flex;
+      gap: 0.75rem;
+      width: 100%;
+    }
+
+    .btn-intent {
+      flex: 1;
+      background: rgba(255, 255, 255, 0.08);
+      border: 1px solid rgba(255, 255, 255, 0.15);
+      border-radius: 0.75rem;
+      padding: 0.85rem;
+      color: #fff;
+      font-weight: 600;
+      text-decoration: none;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 0.5rem;
+      font-size: 0.9rem;
+      transition: all 0.2s;
+    }
+
+    .btn-intent:hover {
+      background: rgba(255, 255, 255, 0.15);
+    }
+
+    .success-card {
+      display: none;
+      background: linear-gradient(135deg, rgba(16, 185, 129, 0.15), rgba(6, 78, 59, 0.3));
+      border: 1px solid rgba(16, 185, 129, 0.4);
+      border-radius: 1.25rem;
+      padding: 2rem 1.5rem;
+      text-align: center;
+      animation: bounceIn 0.5s ease;
+    }
+
+    @keyframes bounceIn {
+      0% { opacity: 0; transform: scale(0.9); }
+      70% { opacity: 1; transform: scale(1.02); }
+      100% { transform: scale(1); }
+    }
+
+    .success-icon {
+      width: 64px;
+      height: 64px;
+      border-radius: 50%;
+      background: #10b981;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 2rem;
+      margin: 0 auto 1rem;
+      box-shadow: 0 10px 25px var(--success-glow);
+    }
+
+    .success-title {
+      font-size: 1.5rem;
+      font-weight: 800;
+      color: #ffffff;
+      margin-bottom: 0.5rem;
+    }
+
+    .receipt-box {
+      background: rgba(0, 0, 0, 0.3);
+      border-radius: 0.75rem;
+      padding: 1rem;
+      margin-top: 1.25rem;
+      font-family: var(--mono);
+      font-size: 0.85rem;
+      display: flex;
+      flex-direction: column;
+      gap: 0.5rem;
+      text-align: left;
+    }
+
+    .receipt-row {
+      display: flex;
+      justify-content: space-between;
+      color: var(--text-muted);
+    }
+
+    .receipt-row span:last-child {
+      color: #ffffff;
+      font-weight: 600;
+    }
+
+    .toast {
+      position: fixed;
+      bottom: 1.5rem;
+      background: #1e293b;
+      border: 1px solid rgba(255, 255, 255, 0.15);
+      color: #fff;
+      padding: 0.75rem 1.25rem;
+      border-radius: 0.75rem;
+      font-size: 0.85rem;
+      font-weight: 600;
+      box-shadow: 0 10px 30px rgba(0, 0, 0, 0.5);
+      opacity: 0;
+      transform: translateY(20px);
+      transition: all 0.3s;
+      pointer-events: none;
+    }
+
+    .toast.show {
+      opacity: 1;
+      transform: translateY(0);
+    }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <!-- Header -->
+    <div class="header">
+      <div class="badge-bar">
+        <span class="badge badge-success">● FamPay IMAP Active</span>
+        <span class="badge badge-blue">Zero APK Required</span>
+      </div>
+      <h1 class="title">SudeepBots Gateway</h1>
+      <p class="subtitle">Real-time FamPay &amp; UPI Automated Verification via Gmail IMAP. Pay ₹2 to test instant checkout settlement.</p>
+    </div>
+
+    <!-- Receiving UPI Account Card -->
+    <div class="card">
+      <div class="card-title">
+        <span>Receiving UPI Account</span>
+        <span id="savedIndicator" style="font-size: 0.75rem; color: #34d399; display: none;">✓ Updated</span>
+      </div>
+      <div class="form-group">
+        <label>Merchant Payee UPI ID (FamPay / UPI)</label>
+        <div class="input-row">
+          <input type="text" id="upiIdInput" value="buddhadeb@fam" placeholder="yourname@fam or phone@fam" />
+          <button class="btn-secondary" onclick="updateUpiId()">Save UPI</button>
+        </div>
+      </div>
+      <p style="font-size: 0.78rem; color: var(--text-muted);">
+        Enter your real FamPay UPI ID (or any UPI ID that delivers credit alerts to <strong>akidmd269@gmail.com</strong>).
+      </p>
+    </div>
+
+    <!-- Initial Action Card -->
+    <div class="card pay-card" id="initialPayCard">
+      <span style="font-size:0.85rem; font-weight:700; color:var(--text-muted); text-transform:uppercase; letter-spacing:0.05em;">Live Test Amount</span>
+      <div class="price-pill">
+        <span class="currency">₹</span>
+        <span class="amount">2.00</span>
+      </div>
+      <button class="btn-primary" id="btnPay" onclick="createPaymentSession()">
+        <span>⚡ Pay ₹2.00 via SudeepBots Gateway</span>
+      </button>
+      <p style="font-size: 0.8rem; color: var(--text-muted);">
+        Click to create live session. Scan QR or tap UPI Intent on your phone.
+      </p>
+    </div>
+
+    <!-- Live Checkout View (Hidden initially) -->
+    <div class="card checkout-view" id="liveCheckoutView">
+      <div style="display:flex; justify-content:space-between; width:100%; align-items:center;">
+        <span style="font-size: 0.85rem; font-weight: 700; color: var(--text-muted); text-transform:uppercase;">Scan &amp; Pay ₹2.00</span>
+        <span id="countdownTimer" style="font-family: var(--mono); font-size: 0.85rem; color: #f59e0b; font-weight:700;">05:00</span>
+      </div>
+
+      <!-- QR Box -->
+      <div class="qr-box">
+        <img id="qrImage" src="" alt="UPI Payment QR Code" />
+      </div>
+
+      <div class="intent-btn-row">
+        <a id="intentLink" href="#" class="btn-intent" target="_blank">
+          <span>📲 Pay via FamPay / UPI App</span>
+        </a>
+        <a id="portalLink" href="#" class="btn-intent" target="_blank">
+          <span>🌐 Open Full Portal</span>
+        </a>
+      </div>
+
+      <!-- Status Tracker -->
+      <div class="status-tracker">
+        <div class="tracker-item completed" id="trackSlot">
+          <div class="tracker-dot"></div>
+          <span>Payment Session Initialized &amp; Slot Locked</span>
+        </div>
+        <div class="tracker-item active" id="trackWait">
+          <div class="tracker-dot"></div>
+          <span id="waitText">Listening for FamPay email alert on akidmd269@gmail.com...</span>
+        </div>
+        <div class="tracker-item" id="trackVerify">
+          <div class="tracker-dot"></div>
+          <span id="verifyText">Automated Attribution &amp; UTR Extraction</span>
+        </div>
+      </div>
+    </div>
+
+    <!-- Success Card (Hidden initially) -->
+    <div class="success-card" id="successCard">
+      <div class="success-icon">✓</div>
+      <h2 class="success-title">Payment Successful!</h2>
+      <p style="color: rgba(255, 255, 255, 0.8); font-size: 0.95rem;">
+        Your ₹2.00 FamPay payment was automatically detected and settled by SudeepBots Gateway via Gmail IMAP.
+      </p>
+
+      <div class="receipt-box">
+        <div class="receipt-row">
+          <span>Status:</span>
+          <span style="color:#34d399;">SETTLED (OBSERVED_SUCCESS)</span>
+        </div>
+        <div class="receipt-row">
+          <span>Amount:</span>
+          <span>₹2.00</span>
+        </div>
+        <div class="receipt-row">
+          <span>Bank UTR:</span>
+          <span id="resUtr" style="color:#60a5fa;">—</span>
+        </div>
+        <div class="receipt-row">
+          <span>Session ID:</span>
+          <span id="resSessionId">—</span>
+        </div>
+        <div class="receipt-row">
+          <span>Observer Mode:</span>
+          <span>Gmail IMAP (Zero APK)</span>
+        </div>
+      </div>
+
+      <button class="btn-primary" style="margin-top: 1.5rem;" onclick="resetTest()">
+        <span>🔄 Test Another Payment</span>
+      </button>
+    </div>
+  </div>
+
+  <div class="toast" id="toast"></div>
+
+  <script>
+    let activePaymentId = null;
+    let pollInterval = null;
+    let countdownInterval = null;
+    let secondsRemaining = 300;
+
+    function showToast(msg) {
+      const toast = document.getElementById('toast');
+      toast.textContent = msg;
+      toast.classList.add('show');
+      setTimeout(() => toast.classList.remove('show'), 3000);
+    }
+
+    // Fetch initial status and receiving UPI ID
+    async function loadInitialStatus() {
+      try {
+        const res = await fetch('/api/test-pay/status');
+        if (res.ok) {
+          const data = await res.json();
+          if (data.upiId) {
+            document.getElementById('upiIdInput').value = data.upiId;
+          }
+        }
+      } catch (err) {}
+    }
+
+    // Update UPI ID
+    async function updateUpiId() {
+      const upiId = document.getElementById('upiIdInput').value.trim();
+      if (!upiId) return showToast('Please enter a valid UPI ID');
+
+      try {
+        const res = await fetch('/api/test-pay/update-upi', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ upiId })
+        });
+        const data = await res.json();
+        if (res.ok && data.success) {
+          const ind = document.getElementById('savedIndicator');
+          ind.style.display = 'inline';
+          setTimeout(() => ind.style.display = 'none', 3000);
+          showToast('Receiving UPI ID updated: ' + upiId);
+        } else {
+          showToast(data.error || 'Failed to update UPI ID');
+        }
+      } catch (err) {
+        showToast('Error updating UPI ID');
+      }
+    }
+
+    // Create Payment Session for ₹2.00
+    async function createPaymentSession() {
+      const btn = document.getElementById('btnPay');
+      btn.disabled = true;
+      btn.innerHTML = '<span>⏳ Creating Session...</span>';
+
+      try {
+        const res = await fetch('/api/test-pay/create', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ amount: '2.00', orderId: 'FAM-2RS-' + Date.now() })
+        });
+
+        const data = await res.json();
+        if (!res.ok) {
+          showToast(data.error || 'Could not create payment session');
+          btn.disabled = false;
+          btn.innerHTML = '<span>⚡ Pay ₹2.00 via SudeepBots Gateway</span>';
+          return;
+        }
+
+        activePaymentId = data.paymentId;
+
+        // Hide pay card, show checkout view
+        document.getElementById('initialPayCard').style.display = 'none';
+        const checkoutView = document.getElementById('liveCheckoutView');
+        checkoutView.style.display = 'flex';
+
+        // Load QR Code SVG
+        const qrUrl = `/checkout/${data.paymentId}/qr.svg`;
+        document.getElementById('qrImage').src = qrUrl;
+
+        // Set Intent link & Portal link
+        const intentUri = data.upiString || `upi://pay?pa=${encodeURIComponent(data.upiId || 'buddhadeb@fam')}&pn=SudeepBots&am=2.00&cu=INR`;
+        document.getElementById('intentLink').href = intentUri;
+        document.getElementById('portalLink').href = data.checkoutUrl || `/checkout/${data.paymentId}`;
+
+        // Start Countdown
+        startCountdown();
+
+        // Start Polling for settlement
+        startPolling(data.paymentId);
+
+      } catch (err) {
+        showToast('Error initiating checkout: ' + err.message);
+        btn.disabled = false;
+        btn.innerHTML = '<span>⚡ Pay ₹2.00 via SudeepBots Gateway</span>';
+      }
+    }
+
+    function startCountdown() {
+      secondsRemaining = 300;
+      clearInterval(countdownInterval);
+      countdownInterval = setInterval(() => {
+        secondsRemaining--;
+        if (secondsRemaining <= 0) {
+          clearInterval(countdownInterval);
+          document.getElementById('countdownTimer').textContent = '00:00 EXPIRED';
+          return;
+        }
+        const m = Math.floor(secondsRemaining / 60).toString().padStart(2, '0');
+        const s = (secondsRemaining % 60).toString().padStart(2, '0');
+        document.getElementById('countdownTimer').textContent = `${m}:${s}`;
+      }, 1000);
+    }
+
+    function startPolling(paymentId) {
+      clearInterval(pollInterval);
+      pollInterval = setInterval(async () => {
+        try {
+          const res = await fetch(`/api/v1/checkout/${paymentId}/state`);
+          if (!res.ok) return;
+          const state = await res.json();
+
+          if (state.status === 'OBSERVED_SUCCESS' || state.status === 'SUCCESS' || state.status === 'RECONCILED') {
+            clearInterval(pollInterval);
+            clearInterval(countdownInterval);
+
+            // Update UI tracker to completed
+            document.getElementById('trackWait').className = 'tracker-item completed';
+            document.getElementById('waitText').textContent = 'FamPay payment alert received via Gmail IMAP!';
+            document.getElementById('trackVerify').className = 'tracker-item completed';
+            document.getElementById('verifyText').textContent = 'UTR Verified: ' + (state.utr || 'Auto-Verified');
+
+            // Show Success Card
+            setTimeout(() => {
+              document.getElementById('liveCheckoutView').style.display = 'none';
+              const sc = document.getElementById('successCard');
+              sc.style.display = 'block';
+              document.getElementById('resUtr').textContent = state.utr || 'Captured via IMAP';
+              document.getElementById('resSessionId').textContent = paymentId;
+            }, 600);
+          }
+        } catch (err) {}
+      }, 1500);
+    }
+
+    function resetTest() {
+      clearInterval(pollInterval);
+      clearInterval(countdownInterval);
+      document.getElementById('successCard').style.display = 'none';
+      document.getElementById('liveCheckoutView').style.display = 'none';
+      const initial = document.getElementById('initialPayCard');
+      initial.style.display = 'flex';
+      const btn = document.getElementById('btnPay');
+      btn.disabled = false;
+      btn.innerHTML = '<span>⚡ Pay ₹2.00 via SudeepBots Gateway</span>';
+    }
+
+    window.addEventListener('DOMContentLoaded', loadInitialStatus);
+  </script>
+</body>
+</html>

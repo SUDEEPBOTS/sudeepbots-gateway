@@ -11,7 +11,7 @@ CREATE TABLE IF NOT EXISTS merchants (
     webhook_url TEXT,
     webhook_secret TEXT NOT NULL,
     api_key_hash TEXT,
-    branding TEXT NOT NULL DEFAULT '{"primaryColor":"#2563eb","appName":"YOUPI PG","logoUrl":null}',
+    branding TEXT NOT NULL DEFAULT '{"primaryColor":"#2563eb","appName":"SudeepBots Gateway","logoUrl":null}',
     created_at TEXT NOT NULL DEFAULT (datetime('now')),
     updated_at TEXT NOT NULL DEFAULT (datetime('now'))
 );

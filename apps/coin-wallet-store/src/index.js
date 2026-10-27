@@ -3,7 +3,7 @@ import { fileURLToPath } from 'node:url';
 import { CoinWalletStoreServer } from './server.js';
 
 export function startCoinWalletStore(port = null, options = {}) {
-  const finalPort = port || Number(process.env.COIN_STORE_PORT || 5000);
+  const finalPort = port || Number(process.env.COIN_STORE_PORT || process.env.COIN_WALLET_STORE_PORT || 5050);
   const storeServer = new CoinWalletStoreServer(options);
   const rawServer = storeServer.createServer();
 

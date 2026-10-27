@@ -122,6 +122,17 @@ describe('Android Payment Observer Integration Tests', () => {
   });
 
   test('submits observation with clientMessageId and returns it in response', async () => {
+    testDb.execute("UPDATE payment_sessions SET status = 'SUCCESS' WHERE receiving_account_id = '00000000-0000-0000-0000-000000000002'");
+    testDb.execute("UPDATE payment_receiving_accounts SET is_slot_busy = 0, current_active_session_id = NULL WHERE id = '00000000-0000-0000-0000-000000000002'");
+    const s8 = apiInstance.app.context.sessionRepo.create({
+      merchantId: '00000000-0000-0000-0000-000000000001',
+      receivingAccountId: '00000000-0000-0000-0000-000000000002',
+      orderId: 'ANDR-ORD-150',
+      amountPaise: 15000n,
+      status: 'ACTIVE'
+    });
+    apiInstance.app.context.queueEngine.enqueueOrActivate(s8.id, '00000000-0000-0000-0000-000000000002');
+
     const clientMsgId = 'msg-uuid-999-client';
     const res = await driver.submitObservation({
       amount: '150.00',
@@ -137,6 +148,17 @@ describe('Android Payment Observer Integration Tests', () => {
   });
 
   test('submits raw bank SMS with clientMessageId and processes through pipeline', async () => {
+    testDb.execute("UPDATE payment_sessions SET status = 'SUCCESS' WHERE receiving_account_id = '00000000-0000-0000-0000-000000000002'");
+    testDb.execute("UPDATE payment_receiving_accounts SET is_slot_busy = 0, current_active_session_id = NULL WHERE id = '00000000-0000-0000-0000-000000000002'");
+    const s9 = apiInstance.app.context.sessionRepo.create({
+      merchantId: '00000000-0000-0000-0000-000000000001',
+      receivingAccountId: '00000000-0000-0000-0000-000000000002',
+      orderId: 'ANDR-ORD-500',
+      amountPaise: 50000n,
+      status: 'ACTIVE'
+    });
+    apiInstance.app.context.queueEngine.enqueueOrActivate(s9.id, '00000000-0000-0000-0000-000000000002');
+
     const clientMsgId = 'sms-uuid-777-client';
     const res = await driver.submitSms({
       sender: 'VK-HDFCBK',

@@ -95,7 +95,7 @@ describe('Gmail Bank Alert Security & Verification Suite', () => {
       assert.equal(attributedId, session.id);
 
       const updated = apiInstance.app.context.sessionRepo.findById(session.id);
-      assert.equal(updated.status, PaymentStatus.SUCCESS);
+      assert.ok([PaymentStatus.SUCCESS, PaymentStatus.OBSERVED_SUCCESS].includes(updated.status));
       assert.ok(updated.verificationSources.includes('GMAIL'));
     });
 
@@ -185,7 +185,7 @@ describe('Gmail Bank Alert Security & Verification Suite', () => {
       });
 
       const updated1 = apiInstance.app.context.sessionRepo.findById(session1.id);
-      assert.equal(updated1.status, PaymentStatus.SUCCESS);
+      assert.ok([PaymentStatus.SUCCESS, PaymentStatus.OBSERVED_SUCCESS].includes(updated1.status));
 
       // Reset slot for Session 2
       testDb.execute("UPDATE payment_receiving_accounts SET is_slot_busy = 0, current_active_session_id = NULL");

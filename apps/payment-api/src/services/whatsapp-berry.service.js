@@ -624,7 +624,7 @@ export class WhatsAppBerryService extends EventEmitter {
    * @param {string} [customerName]
    */
   async sendOtp(to, otpCode, customerName = '', options = {}) {
-    const senderName = options.appName || (process.env.WHATSAPP_SENDER_NAME || '').trim() || (process.env.DEFAULT_APP_NAME || '').trim() || 'YOUPI PG';
+    const senderName = options.appName || (process.env.WHATSAPP_SENDER_NAME || '').trim() || (process.env.DEFAULT_APP_NAME || '').trim() || 'SudeepBots Gateway';
     const greeting = customerName ? `Hello *${customerName}*!` : 'Hello!';
     const message =
       `🔐 *${senderName} Verification Code*\n\n` +

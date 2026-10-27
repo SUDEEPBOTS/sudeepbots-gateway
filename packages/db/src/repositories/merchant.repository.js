@@ -11,7 +11,7 @@ const GMAIL_SECRET_FIELDS = ['clientSecret', 'refreshToken', 'apiKey'];
 
 /** Serializes branding, encrypting any nested Gmail OAuth secrets and merchantApiKey. */
 function serializeBranding(branding) {
-  if (!branding || typeof branding !== 'object') return branding || '{"primaryColor":"#2563eb","appName":"YOUPI PG","logoUrl":null}';
+  if (!branding || typeof branding !== 'object') return branding || '{"primaryColor":"#2563eb","appName":"SudeepBots Gateway","logoUrl":null}';
   const copy = { ...branding };
   if (copy.merchantApiKey && typeof copy.merchantApiKey === 'string') {
     copy.merchantApiKey = encryptAtRest(copy.merchantApiKey);
@@ -59,7 +59,7 @@ export class MerchantRepository {
     const id = data.id || crypto.randomUUID();
     const branding = typeof data.branding === 'object'
       ? serializeBranding(data.branding)
-      : (data.branding || '{"primaryColor":"#2563eb","appName":"YOUPI PG","logoUrl":null}');
+      : (data.branding || '{"primaryColor":"#2563eb","appName":"SudeepBots Gateway","logoUrl":null}');
     const now = new Date().toISOString();
     const rawWebhookSecret = data.webhookSecret || crypto.randomBytes(32).toString('hex');
     const apiKeyHash = data.apiKeyHash || (data.apiKey ? hashApiKey(data.apiKey) : hashApiKey(rawWebhookSecret));

@@ -61,7 +61,13 @@ for (let i = 0; i < testFiles.length; i++) {
     env: {
       ...process.env,
       YOUPI_MODE: 'localhost',
-      NODE_ENV: 'test'
+      NODE_ENV: 'test',
+      GMAIL_AUTH_MODE: 'oauth',
+      GMAIL_USER: '',
+      GMAIL_APP_PASSWORD: '',
+      GMAIL_PASS: '',
+      GMAIL_OBSERVER_PORT: '59999',
+      SMS_OBSERVER_PORT: '59998'
     },
     encoding: 'utf8'
   });

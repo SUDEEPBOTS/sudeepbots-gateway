@@ -75,7 +75,7 @@ export class AdminServer {
       this.template = fs.readFileSync(this.htmlTemplatePath, 'utf8');
     } catch {}
 
-    const appName = (process.env.DEFAULT_APP_NAME || '').trim() || 'YOUPI PG';
+    const appName = (process.env.DEFAULT_APP_NAME || '').trim() || 'SudeepBots Gateway';
     const primaryColor = (process.env.DEFAULT_PRIMARY_COLOR || '').trim() || '#2563eb';
 
     let html = this.template;

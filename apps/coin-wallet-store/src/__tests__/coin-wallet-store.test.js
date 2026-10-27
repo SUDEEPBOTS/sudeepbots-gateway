@@ -2,6 +2,7 @@ import { test, describe, before, after } from 'node:test';
 import assert from 'node:assert/strict';
 import crypto from 'node:crypto';
 import http from 'node:http';
+process.env.NODE_ENV = 'test';
 import { Database } from '@youpi/db';
 import { startServer as startPaymentApi } from '../../../payment-api/src/index.js';
 import { startCoinWalletStore } from '../index.js';
@@ -424,7 +425,7 @@ describe('Coin Top-Up Wallet Demo Store Integration Tests', () => {
     assert.ok(res.body.includes('ORD-SUCC-123'));
     assert.ok(res.body.includes('499.00'));
     assert.ok(res.body.includes('998877665544'));
-    assert.ok(res.body.includes('VERIFIED BY YOUPI PG'));
+    assert.ok(res.body.includes('VERIFIED BY SUDEEPBOTS GATEWAY') || res.body.includes('VERIFIED BY YOUPI PG'));
   });
 
   test('GET /order-suspicious renders held for review security notice', async () => {

@@ -262,13 +262,13 @@ export function resolveGmailRedirectUri(branding = {}) {
  */
 export function resolveDefaultBranding(overrides = {}) {
   const envAppName = (process.env.DEFAULT_APP_NAME || '').trim();
-  const appName = overrides.appName?.trim() || envAppName || 'YOUPI PG';
+  const appName = overrides.appName?.trim() || envAppName || 'SudeepBots Gateway';
 
   const envPrimaryColor = (process.env.DEFAULT_PRIMARY_COLOR || '').trim();
   const primaryColor = overrides.primaryColor?.trim() || envPrimaryColor || '#2563eb';
 
   const envSupportEmail = (process.env.DEFAULT_SUPPORT_EMAIL || '').trim();
-  const supportEmail = overrides.supportEmail?.trim() || envSupportEmail || 'support@youpi.local';
+  const supportEmail = overrides.supportEmail?.trim() || envSupportEmail || 'support@sudeepbots.com';
 
   const envSupportPhone = (process.env.DEFAULT_SUPPORT_PHONE || '').trim();
   const supportPhone = overrides.supportPhone?.trim() || envSupportPhone || '9876543210';

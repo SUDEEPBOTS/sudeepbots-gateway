@@ -119,7 +119,7 @@ async function startGatewayPurchase() {
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({
         price: currentAmount,
-        productName: 'YOUPI PG Enterprise Gateway Suite',
+        productName: 'SudeepBots Gateway Suite',
         coins: Math.round(currentAmount)
       })
     });
@@ -138,8 +138,8 @@ async function startGatewayPurchase() {
       order_id: data.orderId,
       amount: currentAmount,
       currency: 'INR',
-      name: 'YOUPI Store',
-      description: 'YOUPI PG Enterprise Suite Top-Up',
+      name: 'SudeepBots Store',
+      description: 'SudeepBots Gateway Suite Top-Up',
       successUrl: `/order-success?order_id=${encodeURIComponent(data.orderId)}&amount=${encodeURIComponent(currentAmount)}`,
       failedUrl: `/order-failed?order_id=${encodeURIComponent(data.orderId)}`,
       suspiciousUrl: `/order-suspicious?order_id=${encodeURIComponent(data.orderId)}`,
@@ -156,7 +156,7 @@ async function startGatewayPurchase() {
       }
     });
   } catch (err) {
-    alert('Error launching YOUPI Gateway: ' + err.message);
+    alert('Error launching SudeepBots Gateway: ' + err.message);
     btn.disabled = false;
     btn.innerHTML = oldHtml;
   }

@@ -1605,7 +1605,7 @@
                   <div>
                     <label style="display:block; font-size:0.82rem; font-weight:700; margin-bottom:0.35rem;">Merchant
                       Store / Business Name</label>
-                    <input id="settingBusinessName" type="text" placeholder="e.g. YOUPI Store or MSPCARE"
+                    <input id="settingBusinessName" type="text" placeholder="e.g. SudeepBots Store or My Store"
                       style="width:100%;" oninput="updateLiveWhiteLabelPreview()" />
                   </div>
                   <div>
@@ -1936,7 +1936,7 @@
               <div>
                 <label style="display:block; font-size:0.82rem; font-weight:700; margin-bottom:0.3rem;">Payee / Merchant
                   Display Name</label>
-                <input id="newUpiPayee" type="text" placeholder="e.g. YOUPI Store or Store Name" style="width:100%;" />
+                <input id="newUpiPayee" type="text" placeholder="e.g. SudeepBots Store or Store Name" style="width:100%;" />
               </div>
             </div>
             <div style="display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:1rem;">
@@ -2752,20 +2752,20 @@
           </div>
         </div>
 
-        <!-- YOUPI SHOWCASE STORE PORT 5000 MASTER TOGGLE CARD -->
+        <!-- SUDEEPBOTS SHOWCASE STORE PORT 5000 MASTER TOGGLE CARD -->
         <div class="card"
           style="border:2px solid #38bdf8; background:linear-gradient(135deg, rgba(56,189,248,0.06) 0%, var(--bg-card) 100%);">
           <div style="display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:1rem;">
             <div>
               <div style="display:flex; align-items:center; gap:0.6rem;">
                 <span style="font-size:1.35rem;">🛍️</span>
-                <strong style="font-size:1.15rem; color:var(--text-heading);">YOUPI Showcase Store (Port 5000)</strong>
+                <strong style="font-size:1.15rem; color:var(--text-heading);">SudeepBots Showcase Store (Port 5000)</strong>
                 <span class="badge" id="cardStoreBadge"
                   style="font-size:0.8rem; padding:0.3rem 0.75rem;">CHECKING...</span>
               </div>
               <p
                 style="font-size:0.84rem; color:var(--text-muted); margin-top:0.4rem; max-width:720px; line-height:1.5;">
-                Toggle the public YOUPI Showcase Store on or off anytime. When disabled, the Node process is terminated
+                Toggle the public SudeepBots Showcase Store on or off anytime. When disabled, the Node process is terminated
                 and host port <code>5000</code> is freed. When enabled, it launches instantly.
               </p>
             </div>
@@ -4182,13 +4182,13 @@
           cBadge.className = 'badge badge-success';
           cBadge.textContent = '🟢 ONLINE & ACTIVE (PORT 5000)';
           btnToggle.className = 'btn btn-danger';
-          btnToggle.innerHTML = '⏹ Disable YOUPI Store (Port 5000)';
+          btnToggle.innerHTML = '⏹ Disable SudeepBots Store (Port 5000)';
           if (btnLink) btnLink.style.display = 'inline-flex';
         } else {
           cBadge.className = 'badge badge-danger';
           cBadge.textContent = '🔴 DISABLED (PORT 5000 FREE)';
           btnToggle.className = 'btn btn-success';
-          btnToggle.innerHTML = '▶ Enable YOUPI Store (Port 5000)';
+          btnToggle.innerHTML = '▶ Enable SudeepBots Store (Port 5000)';
           if (btnLink) btnLink.style.display = 'none';
         }
       }
@@ -4200,10 +4200,10 @@
 
       if (isRunning) {
         await stopService('coin-wallet-store');
-        showAdminToast('YOUPI Showcase Store disabled. Port 5000 freed.');
+        showAdminToast('SudeepBots Showcase Store disabled. Port 5000 freed.');
       } else {
         await startService('coin-wallet-store');
-        showAdminToast('YOUPI Showcase Store enabled on port 5000!');
+        showAdminToast('SudeepBots Showcase Store enabled on port 5000!');
       }
     }
 
@@ -4815,7 +4815,7 @@
 
     function updateLiveWhiteLabelPreview() {
       const bName = document.getElementById('settingBusinessName')?.value.trim() || 'Merchant Checkout';
-      const appName = document.getElementById('settingAppName')?.value.trim() || '{{APP_NAME}}' || 'YOUPI PG';
+      const appName = document.getElementById('settingAppName')?.value.trim() || '{{APP_NAME}}' || 'SudeepBots Gateway';
       const logoUrl = document.getElementById('settingLogoUrl')?.value.trim() || '';
       const primaryColor = document.getElementById('settingPrimaryColor')?.value.trim() || '#0b63e5';
       const headerTheme = document.getElementById('settingHeaderTheme')?.value || 'gradient';
@@ -4924,7 +4924,7 @@
           setVal('settingWebhookSecret', mData.webhookSecret);
           renderMerchantCredentials(mData);
 
-          setVal('settingAppName', branding.appName || '{{APP_NAME}}' || 'YOUPI PG');
+          setVal('settingAppName', branding.appName || '{{APP_NAME}}' || 'SudeepBots Gateway');
           setVal('settingLogoUrl', branding.logoUrl);
           setVal('settingSidebarNotice', branding.sidebarNotice);
           setVal('settingFooterGuarantee', branding.footerGuarantee);
@@ -5102,7 +5102,7 @@
     async function saveMerchantBrandingAndToggles() {
       settingsLoaded = true;
       const businessName = document.getElementById('settingBusinessName')?.value.trim() || '';
-      const appName = document.getElementById('settingAppName')?.value.trim() || '{{APP_NAME}}' || 'YOUPI PG';
+      const appName = document.getElementById('settingAppName')?.value.trim() || '{{APP_NAME}}' || 'SudeepBots Gateway';
       const logoUrl = document.getElementById('settingLogoUrl')?.value.trim() || '';
       const primaryColor = document.getElementById('settingPrimaryColor')?.value.trim() || '#0b63e5';
       const sidebarNotice = document.getElementById('settingSidebarNotice')?.value.trim() || (currentMerchantBranding?.sidebarNotice || '');

@@ -145,9 +145,9 @@ export function runMigrations(targetDb) {
   let defaultMerchant;
   if (existing.length === 0) {
     const branding = resolveDefaultBranding();
-    const businessName = process.env.DEFAULT_MERCHANT_NAME || 'YOUPI Demo Store';
+    const businessName = process.env.DEFAULT_MERCHANT_NAME || 'SudeepBots Store';
     const slug = process.env.DEFAULT_MERCHANT_SLUG || 'demo-store';
-    const contactEmail = process.env.DEFAULT_SUPPORT_EMAIL || 'merchant@youpi.local';
+    const contactEmail = process.env.DEFAULT_SUPPORT_EMAIL || 'merchant@sudeepbots.com';
     const contactPhone = process.env.DEFAULT_SUPPORT_PHONE || '9876543210';
 
     defaultMerchant = merchantRepo.create({

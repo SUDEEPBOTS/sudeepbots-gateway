@@ -466,6 +466,16 @@
       }
     }
 
+    function skipAuthAndPayAsGuest() {
+      sessionStorage.setItem('ypg_guest_mode', 'true');
+      setGatewayAuthMode(false);
+      updateCustomerDisplay(null);
+      if (typeof loadState === 'function') {
+        loadState();
+      }
+    }
+    window.skipAuthAndPayAsGuest = skipAuthAndPayAsGuest;
+
     function goToAuthStep(step) {
       currentAuthStep = step;
       const stepMobile = document.getElementById('authStepMobile');
@@ -2135,7 +2145,10 @@
         (data.status !== 'INITIATED' || Boolean(activeToken))
       );
 
-      if (!hasCustomer) {
+      const isGuestMode = sessionStorage.getItem('ypg_guest_mode') === 'true';
+      const forceCustomerAuth = Boolean(data.branding?.forceCustomerAuth);
+
+      if (!hasCustomer && forceCustomerAuth && !isGuestMode) {
         if (data.customer && data.customer.phone) {
           const mobInput = document.getElementById('authMobileInput');
           if (mobInput && !mobInput.value) {
@@ -2150,6 +2163,11 @@
         }
         renderSavedAccountsUI();
         return;
+      }
+
+      if (!hasCustomer) {
+        setGatewayAuthMode(false);
+        updateCustomerDisplay(null);
       }
 
       // Authenticated Customer

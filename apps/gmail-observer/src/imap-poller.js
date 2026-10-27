@@ -67,7 +67,7 @@ export class ImapPoller {
   constructor(options = {}) {
     const isLocalhost = process.env.YOUPI_MODE === 'localhost' || !process.env.YOUPI_MODE;
     this.apiBaseUrl = options.apiBaseUrl || (isLocalhost ? `http://127.0.0.1:${process.env.PAYMENT_API_PORT || 6100}` : (process.env.BASE_PAYMENT_API_URL || 'http://localhost:6100'));
-    this.receivingAccountId = options.receivingAccountId || process.env.RECEIVING_ACCOUNT_ID || null;
+    this.receivingAccountId = options.receivingAccountId !== undefined ? options.receivingAccountId : (process.env.RECEIVING_ACCOUNT_ID || null);
     this.pollIntervalMs = options.pollIntervalMs || Number(process.env.GMAIL_POLL_INTERVAL_MS || 2000);
     this.storagePath = options.storagePath || path.join(rootDir, 'data', 'gmail_processed_ids.json');
 

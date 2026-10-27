@@ -420,6 +420,16 @@
       }
     }
 
+    function skipAuthAndPayAsGuest() {
+      sessionStorage.setItem('ypg_guest_mode', 'true');
+      setGatewayAuthMode(false);
+      updateCustomerDisplay(null);
+      if (typeof loadState === 'function') {
+        loadState();
+      }
+    }
+    window.skipAuthAndPayAsGuest = skipAuthAndPayAsGuest;
+
     function goToAuthStep(step) {
       currentAuthStep = step;
       const stepMobile = document.getElementById('authStepMobile');
@@ -1505,8 +1515,8 @@
     function renderState(data) {
       state = data;
       const b = data.branding || {};
-      const appName = (b.appName && b.appName !== 'YOUPI PG') ? b.appName : 'Mitto Pay';
-      const merchantName = (data.merchantName && data.merchantName !== 'YOUPI Demo Store' && data.merchantName !== 'Merchant Checkout') ? data.merchantName : 'V-Visa Business';
+      const appName = b.appName || 'SudeepBots Gateway';
+      const merchantName = (data.merchantName && data.merchantName !== 'Merchant Checkout') ? data.merchantName : 'SudeepBots Store';
 
       // 1. Dynamic Title
       document.title = `${merchantName} · ${appName} Checkout`;
@@ -1987,8 +1997,10 @@
         }
       }
       const hasCustomer = Boolean(data.customer || activeCustomer);
+      const isGuestMode = sessionStorage.getItem('ypg_guest_mode') === 'true';
+      const forceCustomerAuth = Boolean(data.branding?.forceCustomerAuth);
 
-      if (!hasCustomer) {
+      if (!hasCustomer && forceCustomerAuth && !isGuestMode) {
         setGatewayAuthMode(true);
         const stepMob = document.getElementById('authStepMobile');
         const isAlreadyOnMobile = stepMob && !stepMob.hidden;
@@ -1997,6 +2009,11 @@
         }
         renderSavedAccountsUI();
         return;
+      }
+
+      if (!hasCustomer) {
+        setGatewayAuthMode(false);
+        updateCustomerDisplay(null);
       }
 
       // Authenticated Customer

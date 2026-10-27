@@ -32,7 +32,7 @@ const runInLocalhostMode = allowLocalhostMode && requestedMode === 'localhost';
 
 if (runInLocalhostMode) {
   console.log('\n====================================================');
-  console.log('🚀 Starting YOUPI PG V2 — Localhost Mode (explicit opt-in)');
+  console.log('🚀 Starting SudeepBots Gateway — Localhost Mode');
   console.log('====================================================');
   process.env.YOUPI_MODE = 'localhost';
   process.env.NODE_ENV = process.env.NODE_ENV || 'development';
@@ -41,7 +41,7 @@ if (runInLocalhostMode) {
   process.env.NODE_ENV = 'production';
 
   console.log('\n====================================================');
-  console.log('🚀 Starting YOUPI PG V2 — Production Gateway');
+  console.log('🚀 Starting SudeepBots Gateway — Production Gateway');
   console.log('====================================================');
 }
 

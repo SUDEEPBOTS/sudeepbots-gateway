@@ -5,6 +5,7 @@ import { Database } from '@youpi/db';
 import { startServer as startPaymentApi } from '../index.js';
 import { PaymentStatus, PaymentMethod } from '@youpi/common';
 import { authHeadersFor } from '../../../../scripts/test-support.js';
+process.env.NODE_ENV = 'test';
 
 describe('UPI Server Health Indicator & Checkout State Invariants', () => {
   let apiInstance;

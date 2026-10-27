@@ -183,6 +183,15 @@ describe('Gmail Poller Boot Lifecycle & Control Suite', () => {
     });
 
     test('Persists message IDs across restarts and rejects duplicates', async () => {
+      const s1 = apiInstance.app.context.sessionRepo.create({
+        merchantId: '00000000-0000-0000-0000-000000000001',
+        receivingAccountId: '00000000-0000-0000-0000-000000000002',
+        orderId: 'DEDUP-ORD-150',
+        amountPaise: 15000n,
+        status: 'ACTIVE'
+      });
+      apiInstance.app.context.queueEngine.enqueueOrActivate(s1.id, '00000000-0000-0000-0000-000000000002');
+
       // 1. Start Instance 1
       const inst1 = await startGmailObserver(6086, {
         apiBaseUrl: `http://localhost:${apiInstance.port}`,
@@ -228,12 +237,17 @@ describe('Gmail Poller Boot Lifecycle & Control Suite', () => {
         assert.equal(res2.reason, 'MESSAGE_ALREADY_PROCESSED');
       } finally {
         await inst2.close();
+        testDb.execute("UPDATE payment_sessions SET status = 'SUCCESS' WHERE receiving_account_id = '00000000-0000-0000-0000-000000000002'");
+        testDb.execute("UPDATE payment_receiving_accounts SET is_slot_busy = 0, current_active_session_id = NULL WHERE id = '00000000-0000-0000-0000-000000000002'");
       }
     });
   });
 
   describe('3. Ingestion Isolation & Safety Invariants', () => {
     test('Observation ingestion does NOT auto-finalize payment without dual channel', async () => {
+      testDb.execute("UPDATE payment_sessions SET status = 'SUCCESS' WHERE receiving_account_id = '00000000-0000-0000-0000-000000000002'");
+      testDb.execute("UPDATE payment_receiving_accounts SET is_slot_busy = 0, current_active_session_id = NULL WHERE id = '00000000-0000-0000-0000-000000000002'");
+
       const observer = await startGmailObserver(6088, {
         apiBaseUrl: `http://localhost:${apiInstance.port}`,
         receivingAccountId: '00000000-0000-0000-0000-000000000002',
@@ -246,8 +260,10 @@ describe('Gmail Poller Boot Lifecycle & Control Suite', () => {
           merchantId: '00000000-0000-0000-0000-000000000001',
           receivingAccountId: '00000000-0000-0000-0000-000000000002',
           orderId: 'ISOLATION-TEST-ORD-1',
-          amountPaise: 30000n // ₹300.00
+          amountPaise: 30000n, // ₹300.00
+          status: 'ACTIVE'
         });
+        apiInstance.app.context.queueEngine.enqueueOrActivate(session.id, '00000000-0000-0000-0000-000000000002');
 
         // Submit matching bank observation via observer
         const obsResult = await observer.poller.processEmail({

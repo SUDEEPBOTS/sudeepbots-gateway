@@ -176,7 +176,7 @@ export function observerHealthEnforced() {
 }
 
 export function upiObserversAcceptingPayments(health) {
-  return health?.smsHealthy === true && health?.isFalseNarrative !== true;
+  return (health?.smsHealthy === true || health?.gmailHealthy === true) && health?.isFalseNarrative !== true;
 }
 
 /**
@@ -289,7 +289,8 @@ export async function checkUpiServerHealth(ctx, enabledMethods = [], sellingMode
 
     if (hasRefreshToken || hasApiKey) {
       let pollerActive = false;
-      const gmailBaseUrl = process.env.GMAIL_OBSERVER_URL || `http://127.0.0.1:${process.env.GMAIL_OBSERVER_PORT || 6003}`;
+      const defaultGmailPort = (process.env.NODE_ENV === 'test' || Boolean(process.env.NODE_TEST_CONTEXT)) ? 59999 : 6003;
+      const gmailBaseUrl = process.env.GMAIL_OBSERVER_URL || `http://127.0.0.1:${process.env.GMAIL_OBSERVER_PORT || defaultGmailPort}`;
 
       try {
         const res = await fetch(new URL('/health', gmailBaseUrl), { signal: AbortSignal.timeout(800) });
@@ -335,24 +336,40 @@ export async function checkUpiServerHealth(ctx, enabledMethods = [], sellingMode
         gmailReason = 'Gmail OAuth configured but observer service is offline';
       }
     } else {
-      // Check if browser-based Gmail automator is actively logged in
+      // Check if FamPay / Gmail IMAP observer or browser automator is active
       try {
-        const gmailBaseUrl = process.env.GMAIL_OBSERVER_URL || `http://127.0.0.1:${process.env.GMAIL_OBSERVER_PORT || 6003}`;
-        const res = await fetch(new URL('/api/browser/status', gmailBaseUrl), {
-          headers: { 'Authorization': `Bearer ${getObserverToken()}` },
-          signal: AbortSignal.timeout(800)
-        });
+        const defaultGmailPort = (process.env.NODE_ENV === 'test' || Boolean(process.env.NODE_TEST_CONTEXT)) ? 59999 : 6003;
+        const gmailBaseUrl = process.env.GMAIL_OBSERVER_URL || `http://127.0.0.1:${process.env.GMAIL_OBSERVER_PORT || defaultGmailPort}`;
+        const res = await fetch(new URL('/health', gmailBaseUrl), { signal: AbortSignal.timeout(800) });
         if (res.ok) {
           const data = await res.json();
-          if (data.isLoggedIn === true && data.status === 'CONNECTED') {
+          if (data.status === 'UP') {
             gmailHealthy = true;
-            gmailReason = 'Gmail browser automator logged in';
+            gmailReason = data.authMode === 'imap' ? 'FamPay / Gmail IMAP active and connected' : 'Gmail observer connected';
           }
         }
       } catch (e) {}
 
       if (!gmailHealthy) {
-        gmailReason = 'Gmail OAuth not configured';
+        try {
+          const defaultGmailPort = (process.env.NODE_ENV === 'test' || Boolean(process.env.NODE_TEST_CONTEXT)) ? 59999 : 6003;
+          const gmailBaseUrl = process.env.GMAIL_OBSERVER_URL || `http://127.0.0.1:${process.env.GMAIL_OBSERVER_PORT || defaultGmailPort}`;
+          const res = await fetch(new URL('/api/browser/status', gmailBaseUrl), {
+            headers: { 'Authorization': `Bearer ${getObserverToken()}` },
+            signal: AbortSignal.timeout(800)
+          });
+          if (res.ok) {
+            const data = await res.json();
+            if (data.isLoggedIn === true && data.status === 'CONNECTED') {
+              gmailHealthy = true;
+              gmailReason = 'Gmail browser automator logged in';
+            }
+          }
+        } catch (e) {}
+      }
+
+      if (!gmailHealthy) {
+        gmailReason = 'Gmail observer not configured or offline';
       }
     }
   } catch (err) {

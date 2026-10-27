@@ -106,7 +106,8 @@ export class CoinWalletStoreServer {
     // Canonical public origin of this store. Post-payment return URLs are built from this
     // value rather than from the request's Host / X-Forwarded-* headers, which are
     // attacker-controllable and would otherwise allow redirecting paying customers elsewhere.
-    this.publicBaseUrl = (options.publicBaseUrl || process.env.COIN_STORE_PUBLIC_URL || `http://localhost:${process.env.STORE_PORT || 5000}`)
+    const storePort = process.env.COIN_WALLET_STORE_PORT || process.env.COIN_STORE_PORT || process.env.STORE_PORT || 5050;
+    this.publicBaseUrl = (options.publicBaseUrl || process.env.BASE_DEMO_STORE_URL || process.env.COIN_STORE_PUBLIC_URL || `http://localhost:${storePort}`)
       .replace(/\/+$/, '');
 
     // orderId -> gateway paymentId for orders this store created (used to verify payments server-side)
@@ -388,6 +389,19 @@ export class CoinWalletStoreServer {
 
       // GET / or /store
       if ((pathname === '/' || pathname === '/store') && (method === 'GET' || method === 'HEAD')) {
+        const host = (req.headers.host || '').toLowerCase();
+        if (pathname === '/' && (host.includes('pay.yukisbox.com') || host.startsWith('pay.'))) {
+          try { this.testPayHtml = fs.readFileSync(path.join(__dirname, 'test-pay.html'), 'utf8'); } catch {}
+          res.writeHead(200, {
+            'Content-Type': 'text/html; charset=utf-8',
+            'Cache-Control': 'no-store, no-cache, must-revalidate',
+            ...BASE_SECURITY_HEADERS
+          });
+          if (method === 'HEAD') { res.end(); return; }
+          res.end(this.testPayHtml || '<h1>Test page loading...</h1>');
+          return;
+        }
+
         try { this.storeHtml = fs.readFileSync(path.join(__dirname, 'store.html'), 'utf8'); } catch {}
         res.writeHead(200, {
           'Content-Type': 'text/html; charset=utf-8',
@@ -523,6 +537,122 @@ export class CoinWalletStoreServer {
           coins: this.walletCoins,
           history: this.transactionHistory
         }));
+        return;
+      }
+
+      // GET /pay-test or /test-pay or /test (Live ₹2 FamPay Test Website)
+      if ((pathname === '/pay-test' || pathname === '/test-pay' || pathname === '/test') && (method === 'GET' || method === 'HEAD')) {
+        try { this.testPayHtml = fs.readFileSync(path.join(__dirname, 'test-pay.html'), 'utf8'); } catch {}
+        res.writeHead(200, {
+          'Content-Type': 'text/html; charset=utf-8',
+          'Cache-Control': 'no-store, no-cache, must-revalidate',
+          ...BASE_SECURITY_HEADERS
+        });
+        if (method === 'HEAD') { res.end(); return; }
+        res.end(this.testPayHtml || '<h1>Test page loading...</h1>');
+        return;
+      }
+
+      // GET /api/test-pay/status
+      if (pathname === '/api/test-pay/status' && method === 'GET') {
+        let upiId = 'buddhadeb@fam';
+        try {
+          const dbPath = path.resolve(__dirname, '../../../data/youpi_pg.sqlite');
+          if (fs.existsSync(dbPath)) {
+            const db = new DatabaseSync(dbPath);
+            const row = db.prepare("SELECT upi_id FROM payment_receiving_accounts WHERE id = '00000000-0000-0000-0000-000000000002'").get();
+            if (row?.upi_id) upiId = row.upi_id;
+            db.close();
+          }
+        } catch {}
+
+        res.writeHead(200, { 'Content-Type': 'application/json', 'Access-Control-Allow-Origin': '*' });
+        res.end(JSON.stringify({
+          upiId,
+          gmailUser: process.env.GMAIL_USER || 'akidmd269@gmail.com',
+          observerMode: 'imap'
+        }));
+        return;
+      }
+
+      // POST /api/test-pay/update-upi
+      if (pathname === '/api/test-pay/update-upi' && method === 'POST') {
+        let body = '';
+        req.on('data', chunk => { body += chunk; });
+        req.on('end', () => {
+          try {
+            const data = JSON.parse(body || '{}');
+            const newUpi = String(data.upiId || '').trim();
+            if (!newUpi || !newUpi.includes('@')) {
+              res.writeHead(400, { 'Content-Type': 'application/json' });
+              res.end(JSON.stringify({ error: 'Valid UPI ID required (e.g. name@fam)' }));
+              return;
+            }
+            const dbPath = path.resolve(__dirname, '../../../data/youpi_pg.sqlite');
+            if (fs.existsSync(dbPath)) {
+              const db = new DatabaseSync(dbPath);
+              db.prepare("UPDATE payment_receiving_accounts SET upi_id = ?, updated_at = datetime('now') WHERE id = '00000000-0000-0000-0000-000000000002'").run(newUpi);
+              db.close();
+            }
+            res.writeHead(200, { 'Content-Type': 'application/json', 'Access-Control-Allow-Origin': '*' });
+            res.end(JSON.stringify({ success: true, upiId: newUpi }));
+          } catch (e) {
+            res.writeHead(500, { 'Content-Type': 'application/json' });
+            res.end(JSON.stringify({ error: e.message }));
+          }
+        });
+        return;
+      }
+
+      // POST /api/test-pay/create
+      if (pathname === '/api/test-pay/create' && method === 'POST') {
+        let body = '';
+        req.on('data', chunk => { body += chunk; });
+        req.on('end', async () => {
+          try {
+            const data = JSON.parse(body || '{}');
+            const amount = '2.00';
+            const orderId = data.orderId || `FAM-2RS-${Date.now()}`;
+            const host = req.headers['x-forwarded-host'] || req.headers.host || '';
+            const proto = req.headers['x-forwarded-proto'] || (host.includes('yukisbox.com') ? 'https' : 'http');
+            const origin = host ? `${proto}://${host}` : this.publicBaseUrl;
+
+            const payment = await this.paymentClient.createPayment({
+              orderId,
+              amount,
+              currency: 'INR',
+              returnUrl: `${origin}/pay-test?orderId=${encodeURIComponent(orderId)}`,
+              metadata: { testNote: 'FamPay 2rs verification test' }
+            });
+
+            // Get current UPI ID
+            let currentUpiId = 'buddhadeb@fam';
+            try {
+              const dbPath = path.resolve(__dirname, '../../../data/youpi_pg.sqlite');
+              if (fs.existsSync(dbPath)) {
+                const db = new DatabaseSync(dbPath);
+                const row = db.prepare("SELECT upi_id FROM payment_receiving_accounts WHERE id = '00000000-0000-0000-0000-000000000002'").get();
+                if (row?.upi_id) currentUpiId = row.upi_id;
+                db.close();
+              }
+            } catch {}
+
+            const upiString = `upi://pay?pa=${encodeURIComponent(currentUpiId)}&pn=SudeepBots&am=2.00&cu=INR`;
+            const checkoutUrl = `${origin}/checkout/${payment.paymentId}`;
+
+            res.writeHead(200, { 'Content-Type': 'application/json', 'Access-Control-Allow-Origin': '*' });
+            res.end(JSON.stringify({
+              paymentId: payment.paymentId,
+              orderId,
+              checkoutUrl,
+              upiId: currentUpiId,
+              upiString
+            }));
+          } catch (err) {
+            res.writeHead(500, { 'Content-Type': 'application/json' });
+            res.end(JSON.stringify({ error: err.message || 'Payment creation failed' }));
+          }
+        });
         return;
       }
 

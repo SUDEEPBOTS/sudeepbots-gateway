@@ -11,7 +11,7 @@ export class SmsObserverService {
    */
   constructor(options = {}) {
     this.apiBaseUrl = options.apiBaseUrl || process.env.PAYMENT_API_URL || process.env.BASE_PAYMENT_API_URL || 'http://localhost:6100';
-    this.receivingAccountId = options.receivingAccountId || process.env.RECEIVING_ACCOUNT_ID || null;
+    this.receivingAccountId = options.receivingAccountId !== undefined ? options.receivingAccountId : (process.env.RECEIVING_ACCOUNT_ID || null);
     this.pollIntervalMs = options.pollIntervalMs || Number(process.env.SMS_OBSERVER_POLL_INTERVAL_MS || 3000);
     this.observerClient = new PaymentObserverClient({
       apiBaseUrl: this.apiBaseUrl,

@@ -57,7 +57,7 @@ export class GmailPoller {
     this.options = options;
     const isLocalhost = process.env.YOUPI_MODE === 'localhost' || !process.env.YOUPI_MODE;
     this.apiBaseUrl = options.apiBaseUrl || (isLocalhost ? `http://127.0.0.1:${process.env.PAYMENT_API_PORT || 6100}` : (process.env.BASE_PAYMENT_API_URL || 'http://localhost:6100'));
-    this.receivingAccountId = options.receivingAccountId || process.env.RECEIVING_ACCOUNT_ID || null;
+    this.receivingAccountId = options.receivingAccountId !== undefined ? options.receivingAccountId : (process.env.RECEIVING_ACCOUNT_ID || null);
     this.pollIntervalMs = options.pollIntervalMs || Number(process.env.GMAIL_POLL_INTERVAL_MS || 2000);
     this.storagePath = options.storagePath || path.join(rootDir, 'data', 'gmail_processed_ids.json');
     this.observerClient = new PaymentObserverClient({
@@ -65,10 +65,13 @@ export class GmailPoller {
       sourceName: 'GMAIL'
     });
 
-    const hasImapCreds = Boolean(
-      (options.user || process.env.GMAIL_USER) &&
-      (options.password || process.env.GMAIL_APP_PASSWORD || process.env.GMAIL_PASS)
-    ) || (process.env.GMAIL_AUTH_MODE === 'imap');
+    const imapPass = options.password || process.env.GMAIL_APP_PASSWORD || process.env.GMAIL_PASS;
+    const hasValidPass = Boolean(imapPass && !imapPass.includes('xxxx') && imapPass.trim() !== '');
+    const hasImapCreds = (options.authMode === 'imap') || (
+      options.authMode !== 'oauth' &&
+      Boolean(options.user || process.env.GMAIL_USER) &&
+      hasValidPass
+    ) || (process.env.GMAIL_AUTH_MODE === 'imap' && hasValidPass);
 
     this.authMode = hasImapCreds ? 'imap' : 'oauth';
     this.imapPoller = hasImapCreds ? new ImapPoller({
