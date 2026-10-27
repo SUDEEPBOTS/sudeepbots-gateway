@@ -6,12 +6,20 @@ import { toPaise } from '@youpi/common';
  */
 export const AUTHORIZED_BANK_EMAIL_DOMAINS = [
   'bank.in',
+  'fin.in',
   'hdfcbank.net',
   'hdfcbank.com',
   'icicibank.com',
   'sbi.co.in',
   'axisbank.com',
-  'kotak.com'
+  'kotak.com',
+  'kotak.co.in',
+  'paytmbank.com',
+  'paytm.com',
+  'yesbank.in',
+  'famapp.in',
+  'fampay.in',
+  'famapp.co.in'
 ];
 
 /**
@@ -151,27 +159,39 @@ export class BankEmailParser {
 
     // 2. Extract Bank Reference / UTR Number
     // Matches: UTR: 123456789012, Ref no: UTR-HDFC-9911, Ref: UTR-GMAIL-777, UPI/CR/123456789/, UPI Ref 086704470482
+    // 2. Extract Bank Reference / UTR Number
+    // Matches: UTR: 123456789012, Ref no: UTR-HDFC-9911, Ref: UTR-GMAIL-777, UPI/CR/123456789/, UPI Ref 086704470482, Transaction ID: FAM123
     let bankRef;
-    const refMatch = combinedText.match(/(?:utr(?:\s*no\.?)?|ref(?:\s*no\.?|\s*num)?|txn(?:\s*id)?|rrn(?:\s*no\.?)?|upi\s*ref(?:erence)?)[:\s#=-]+([a-zA-Z0-9\-_]{6,35})/i);
-    if (refMatch && refMatch[1]) {
-      bankRef = refMatch[1].trim();
+    const utrMatch = combinedText.match(/(?:utr(?:\s*no\.?)?|rrn(?:\s*no\.?)?|upi\s*ref(?:erence)?)[:\s#=-]+([0-9]{6,20})/i);
+    if (utrMatch && utrMatch[1]) {
+      bankRef = utrMatch[1].trim();
     } else {
-      const upiCrMatch = combinedText.match(/UPI\/CR\/([a-zA-Z0-9\-_]+)/i);
-      if (upiCrMatch && upiCrMatch[1]) {
-        bankRef = upiCrMatch[1].trim();
+      const refMatch = combinedText.match(/(?:utr(?:\s*no\.?)?|ref(?:\s*no\.?|\s*num)?|txn(?:\s*id)?|transaction\s*id|rrn(?:\s*no\.?)?|upi\s*ref(?:erence)?)[:\s#=-]+([a-zA-Z0-9\-_]{6,35})/i);
+      if (refMatch && refMatch[1]) {
+        bankRef = refMatch[1].trim();
       } else {
-        const standalone12Digit = combinedText.match(/\b([0-9]{12})\b/);
-        if (standalone12Digit && standalone12Digit[1]) {
-          bankRef = standalone12Digit[1].trim();
+        const upiCrMatch = combinedText.match(/UPI\/CR\/([a-zA-Z0-9\-_]+)/i);
+        if (upiCrMatch && upiCrMatch[1]) {
+          bankRef = upiCrMatch[1].trim();
+        } else {
+          const standalone12Digit = combinedText.match(/\b([0-9]{12})\b/);
+          if (standalone12Digit && standalone12Digit[1]) {
+            bankRef = standalone12Digit[1].trim();
+          }
         }
       }
     }
 
-    // 3. Extract Sender VPA
+    // 3. Extract Sender VPA or Name
     let senderVpa;
     const vpaMatch = combinedText.match(/(?:from|by)\s+([a-zA-Z0-9.\-_]{2,100}@[a-zA-Z0-9.\-_]{2,64})/i);
     if (vpaMatch && vpaMatch[1]) {
       senderVpa = vpaMatch[1].trim().replace(/[.,;]+$/, '');
+    } else {
+      const nameMatch = combinedText.match(/(?:from|by)\s+([a-zA-Z0-9\s._'-]{2,40}?)(?:\n|\r|\.|,|\son\b|\sat\b|\swith\b|\sfor\b|\saccount\b|$)/i);
+      if (nameMatch && nameMatch[1]) {
+        senderVpa = nameMatch[1].trim();
+      }
     }
 
     // 4. Timestamp

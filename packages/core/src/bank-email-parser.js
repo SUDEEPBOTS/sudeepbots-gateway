@@ -60,28 +60,38 @@ export class BankEmailParser {
     }
 
     // 2. Extract Bank Reference / UTR Number
-    // Matches: UTR: 123456789012, Ref no: UTR-HDFC-9911, Ref: UTR-GMAIL-777, UPI/CR/123456789/, 12-digit UTR
+    // Matches: UTR: 123456789012, Ref no: UTR-HDFC-9911, Ref: UTR-GMAIL-777, UPI/CR/123456789/, Transaction ID: FAM123456789, 12-digit UTR
     let bankRef;
-    const refMatch = combinedText.match(/(?:utr|ref(?:\s*no)?|txn(?:\s*id)?|rrn)[:\s#]+([a-zA-Z0-9\-_]{6,35})/i);
-    if (refMatch && refMatch[1]) {
-      bankRef = refMatch[1].trim();
+    const utrMatch = combinedText.match(/(?:utr(?:\s*no\.?)?|rrn(?:\s*no\.?)?|upi\s*ref(?:erence)?)[:\s#=-]+([0-9]{6,20})/i);
+    if (utrMatch && utrMatch[1]) {
+      bankRef = utrMatch[1].trim();
     } else {
-      const upiCrMatch = combinedText.match(/UPI\/CR\/([a-zA-Z0-9\-_]+)/i);
-      if (upiCrMatch && upiCrMatch[1]) {
-        bankRef = upiCrMatch[1].trim();
+      const refMatch = combinedText.match(/(?:utr|ref(?:\s*no)?|txn(?:\s*id)?|transaction\s*id|rrn)[:\s#=-]+([a-zA-Z0-9\-_]{6,35})/i);
+      if (refMatch && refMatch[1]) {
+        bankRef = refMatch[1].trim();
       } else {
-        const d12Match = combinedText.match(/\b([0-9]{12})\b/);
-        if (d12Match && d12Match[1]) {
-          bankRef = d12Match[1].trim();
+        const upiCrMatch = combinedText.match(/UPI\/CR\/([a-zA-Z0-9\-_]+)/i);
+        if (upiCrMatch && upiCrMatch[1]) {
+          bankRef = upiCrMatch[1].trim();
+        } else {
+          const d12Match = combinedText.match(/\b([0-9]{12})\b/);
+          if (d12Match && d12Match[1]) {
+            bankRef = d12Match[1].trim();
+          }
         }
       }
     }
 
-    // 3. Extract Sender VPA
+    // 3. Extract Sender VPA or Name
     let senderVpa;
     const vpaMatch = combinedText.match(/(?:from|by|vpa)\s+([a-zA-Z0-9.\-_]{2,100}@[a-zA-Z0-9.\-_]{2,64})/i);
     if (vpaMatch && vpaMatch[1]) {
       senderVpa = vpaMatch[1].trim().replace(/[.,;]+$/, '');
+    } else {
+      const nameMatch = combinedText.match(/(?:from|by)\s+([a-zA-Z0-9\s._'-]{2,40}?)(?:\n|\r|\.|,|\son\b|\sat\b|\swith\b|\sfor\b|\saccount\b|$)/i);
+      if (nameMatch && nameMatch[1]) {
+        senderVpa = nameMatch[1].trim();
+      }
     }
 
     // 4. Timestamp

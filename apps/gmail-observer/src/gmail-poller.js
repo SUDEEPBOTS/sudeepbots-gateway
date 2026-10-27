@@ -4,6 +4,7 @@ import { fileURLToPath } from 'node:url';
 import { PaymentObserverClient } from '@youpi/observer-sdk';
 import { getObserverToken } from '@youpi/common';
 import { BankEmailParser, redactSensitiveData, isAuthorizedBankEmailSender } from './parser.js';
+import { ImapPoller } from './imap-poller.js';
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
@@ -53,6 +54,7 @@ export class GmailPoller {
    * }} options
    */
   constructor(options = {}) {
+    this.options = options;
     const isLocalhost = process.env.YOUPI_MODE === 'localhost' || !process.env.YOUPI_MODE;
     this.apiBaseUrl = options.apiBaseUrl || (isLocalhost ? `http://127.0.0.1:${process.env.PAYMENT_API_PORT || 6100}` : (process.env.BASE_PAYMENT_API_URL || 'http://localhost:6100'));
     this.receivingAccountId = options.receivingAccountId || process.env.RECEIVING_ACCOUNT_ID || null;
@@ -62,6 +64,22 @@ export class GmailPoller {
       apiBaseUrl: this.apiBaseUrl,
       sourceName: 'GMAIL'
     });
+
+    const hasImapCreds = Boolean(
+      (options.user || process.env.GMAIL_USER) &&
+      (options.password || process.env.GMAIL_APP_PASSWORD || process.env.GMAIL_PASS)
+    ) || (process.env.GMAIL_AUTH_MODE === 'imap');
+
+    this.authMode = hasImapCreds ? 'imap' : 'oauth';
+    this.imapPoller = hasImapCreds ? new ImapPoller({
+      apiBaseUrl: this.apiBaseUrl,
+      receivingAccountId: this.receivingAccountId,
+      pollIntervalMs: this.pollIntervalMs,
+      storagePath: this.storagePath,
+      user: options.user || process.env.GMAIL_USER,
+      password: options.password || process.env.GMAIL_APP_PASSWORD || process.env.GMAIL_PASS,
+      maxAgeMinutes: options.maxAgeMinutes || Number(process.env.MAX_PAYMENT_AGE_MINUTES || 30)
+    }) : null;
 
     this.isRunning = false;
     this.timer = null;
@@ -127,7 +145,16 @@ export class GmailPoller {
       return { success: false, state: 'STANDBY', reason: 'MISSING_RECEIVING_ACCOUNT' };
     }
 
-    // 2. Fetch / verify OAuth credentials
+    // 2. Direct IMAP Mode (FamPay & UPI via Gmail App Password - No APK or OAuth needed!)
+    if (this.imapPoller) {
+      const imapRes = await this.imapPoller.startBootLifecycle();
+      this.lifecycleState = this.imapPoller.lifecycleState;
+      this.degradedReason = this.imapPoller.degradedReason;
+      this.isRunning = this.imapPoller.isRunning;
+      return imapRes;
+    }
+
+    // 3. Fetch / verify OAuth credentials (legacy fallback)
     if (!this.credentials?.refreshToken || !this.credentials?.clientId || !this.credentials?.clientSecret) {
       await this.fetchCredentialsFromPaymentApi();
     }
@@ -250,6 +277,10 @@ export class GmailPoller {
    * @param {{ subject: string, body: string, date?: string | Date, from?: string, id?: string, messageId?: string }} email
    */
   async processEmail(email) {
+    if (this.imapPoller) {
+      return await this.imapPoller.processEmail(email);
+    }
+
     if (!this.receivingAccountId) {
       console.warn('[Gmail Observer] Dropping observation: no receivingAccountId configured (fail-closed, dynamic guessing prohibited)');
       return null;
@@ -322,6 +353,13 @@ export class GmailPoller {
   }
 
   start() {
+    if (this.imapPoller) {
+      this.imapPoller.start();
+      this.isRunning = this.imapPoller.isRunning;
+      this.lifecycleState = this.imapPoller.lifecycleState;
+      return;
+    }
+
     if (this.isRunning) return;
     this.isRunning = true;
     this.lifecycleState = 'ACTIVE';
@@ -339,6 +377,12 @@ export class GmailPoller {
 
   stop() {
     this.clearBootRetryTimer();
+    if (this.imapPoller) {
+      this.imapPoller.stop();
+      this.isRunning = false;
+      this.lifecycleState = 'STOPPED';
+      return;
+    }
     if (this.timer) {
       clearInterval(this.timer);
       this.timer = null;

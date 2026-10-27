@@ -50,19 +50,22 @@ export class GmailObserverServer {
       if (pathname === '/health') {
         const poller = this.poller;
         const status = poller.lifecycleState === 'DEGRADED' ? 'DEGRADED' : 'UP';
+        const connectedEmail = poller.imapPoller?.user || poller.credentials?.connectedEmail;
 
         res.writeHead(200, { 'Content-Type': 'application/json' });
         res.end(JSON.stringify({
           status,
           service: 'gmail-observer',
+          authMode: poller.authMode || (poller.imapPoller ? 'imap' : 'oauth'),
+          imapConfigured: Boolean(poller.imapPoller),
           isRunning: poller.isRunning,
           lifecycleState: poller.lifecycleState,
           degradedReason: poller.degradedReason,
           receivingAccountConfigured: Boolean(poller.receivingAccountId),
           oauthConfigured: Boolean(poller.credentials?.refreshToken),
-          connectedEmail: poller.credentials?.connectedEmail ? redactSensitiveData(poller.credentials.connectedEmail) : null,
-          lastPollAt: poller.lastPollAt,
-          observedCount: poller.observedCount,
+          connectedEmail: connectedEmail ? redactSensitiveData(connectedEmail) : null,
+          lastPollAt: poller.lastPollAt || poller.imapPoller?.lastPollAt,
+          observedCount: poller.observedCount || poller.imapPoller?.observedCount || 0,
           lastBootCheckAt: poller.lastBootCheckAt
         }));
         return;

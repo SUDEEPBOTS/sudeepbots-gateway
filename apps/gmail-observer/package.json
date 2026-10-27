@@ -10,6 +10,8 @@
   },
   "dependencies": {
     "@youpi/common": "*",
-    "@youpi/observer-sdk": "*"
+    "@youpi/observer-sdk": "*",
+    "imapflow": "^2.9.1",
+    "mailparser": "^3.12.4"
   }
 }

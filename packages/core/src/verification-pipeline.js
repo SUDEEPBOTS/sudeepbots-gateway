@@ -42,6 +42,26 @@ const FRAUD_PATTERNS = [
   /malicious/i
 ];
 
+export const KNOWN_BANK_DOMAINS = new Set([
+  'hdfcbank.net', 'hdfcbank.com',
+  'icicibank.com',
+  'sbi.co.in',
+  'axisbank.com',
+  'kotak.com', 'kotak.co.in',
+  'paytmbank.com', 'paytm.com',
+  'yesbank.in', 'pnb.co.in',
+  'bankofbaroda.co.in', 'bankofbaroda.com',
+  'indusind.com',
+  'idfcfirstbank.com', 'idfcbank.com',
+  'canarabank.com',
+  'unionbankofindia.co.in',
+  'federalbank.co.in',
+  'idbibank.com',
+  'famapp.in',
+  'fampay.in',
+  'famapp.co.in'
+]);
+
 /**
  * Complete Payment Verification & Observation Security Pipeline.
  *
@@ -385,22 +405,6 @@ export class PaymentVerificationPipeline {
       }
 
       // Universal Bank Identifier: Email domain ends with .bank.in/.fin.in or is an official verified Indian bank domain
-      const KNOWN_BANK_DOMAINS = new Set([
-        'hdfcbank.net', 'hdfcbank.com',
-        'icicibank.com',
-        'sbi.co.in',
-        'axisbank.com',
-        'kotak.com', 'kotak.co.in',
-        'paytmbank.com', 'paytm.com',
-        'yesbank.in', 'pnb.co.in',
-        'bankofbaroda.co.in', 'bankofbaroda.com',
-        'indusind.com',
-        'idfcfirstbank.com', 'idfcbank.com',
-        'canarabank.com',
-        'unionbankofindia.co.in',
-        'federalbank.co.in',
-        'idbibank.com'
-      ]);
       const isBankDomain =
         emailDomain.endsWith('.bank.in') ||
         emailDomain.endsWith('.fin.in') ||
@@ -513,7 +517,7 @@ export class PaymentVerificationPipeline {
     let bankRef = input.bankReferenceNumber || input.utr || null;
     if (!bankRef) {
       const ref12Patterns = [
-        /(?:upi\s*ref(?:erence)?\s*(?:no\.?|num)?|utr(?:\s*no\.?)?|rrn(?:\s*no\.?)?|txn\s*(?:id|ref)?|ref\s*no\.?)[\s:=-]+([0-9]{12})\b/i,
+        /(?:upi\s*ref(?:erence)?\s*(?:no\.?|num)?|utr(?:\s*no\.?)?|rrn(?:\s*no\.?)?|txn\s*(?:id|ref)?|transaction\s*(?:id|ref)?|ref\s*no\.?)[\s:=-]+([0-9]{12})\b/i,
         /(?:ref\s*no\.?)?[\s:#=-]+([0-9]{12})\b/i,
         /\b([0-9]{12})\b/
       ];
@@ -527,7 +531,7 @@ export class PaymentVerificationPipeline {
     }
 
     if (!bankRef && isGmailSource) {
-      const generalRefMatch = rawText.match(/(?:utr|ref(?:\s*no\.?)?|txn\s*(?:id|ref)?|rrn)[:\s#]+([a-zA-Z0-9\-_]{6,35})/i) ||
+      const generalRefMatch = rawText.match(/(?:utr|ref(?:\s*no\.?)?|txn\s*(?:id|ref)?|transaction\s*(?:id|ref)?|rrn)[:\s#=-]+([a-zA-Z0-9\-_]{6,35})/i) ||
         rawText.match(/UPI\/CR\/([a-zA-Z0-9\-_]+)/i);
       if (generalRefMatch && generalRefMatch[1]) {
         bankRef = generalRefMatch[1].trim();
@@ -606,22 +610,38 @@ export class PaymentVerificationPipeline {
     // =========================================================================
     let stage4;
 
-    if (!session && parsedData?.amountPaise) {
-      // Amount alone is not an identifier: two merchants can legitimately have an identical
-      // in-flight amount. Only fall back on amount when the VPA the credit landed on is known,
-      // and then only within that VPA's merchant.
-      const scopeByVpa = observedVpa || (parsedData.vpa ? String(parsedData.vpa).toLowerCase() : null);
-      if (scopeByVpa) {
+    if ((!session || (session.amountPaise && BigInt(session.amountPaise) !== BigInt(parsedData.amountPaise))) && parsedData?.amountPaise) {
+      // 1. Try matching by receiving account and exact amount
+      if (input.receivingAccountId) {
         const matchRow = this.db.queryOne(`
-          SELECT ps.* FROM payment_sessions ps
-          JOIN payment_receiving_accounts ra ON ps.receiving_account_id = ra.id
-          WHERE ps.status IN ('ACTIVE', 'PROCESSING')
-            AND ps.amount_paise = ?
-            AND LOWER(ra.upi_id) = ?
-          ORDER BY ps.created_at DESC LIMIT 1
-        `, [Number(parsedData.amountPaise), scopeByVpa]);
+          SELECT * FROM payment_sessions
+          WHERE receiving_account_id = ?
+            AND amount_paise = ?
+            AND status IN ('ACTIVE', 'PROCESSING')
+          ORDER BY created_at DESC LIMIT 1
+        `, [input.receivingAccountId, Number(parsedData.amountPaise)]);
         if (matchRow) {
           session = this.sessionRepo.mapRow(matchRow);
+        }
+      }
+
+      // 2. Amount alone is not an identifier: two merchants can legitimately have an identical
+      // in-flight amount. Only fall back on amount when the VPA the credit landed on is known,
+      // and then only within that VPA's merchant.
+      if (!session || (session.amountPaise && BigInt(session.amountPaise) !== BigInt(parsedData.amountPaise))) {
+        const scopeByVpa = observedVpa || (parsedData.vpa ? String(parsedData.vpa).toLowerCase() : null);
+        if (scopeByVpa) {
+          const matchRow = this.db.queryOne(`
+            SELECT ps.* FROM payment_sessions ps
+            JOIN payment_receiving_accounts ra ON ps.receiving_account_id = ra.id
+            WHERE ps.status IN ('ACTIVE', 'PROCESSING')
+              AND ps.amount_paise = ?
+              AND LOWER(ra.upi_id) = ?
+            ORDER BY ps.created_at DESC LIMIT 1
+          `, [Number(parsedData.amountPaise), scopeByVpa]);
+          if (matchRow) {
+            session = this.sessionRepo.mapRow(matchRow);
+          }
         }
       }
     }
@@ -875,7 +895,13 @@ export class PaymentVerificationPipeline {
       isNotLegitimateBank = !isValidSenderCode || isAttributableToCustomer;
     } else if (source === 'GMAIL') {
       const senderDomain = sender.includes('@') ? sender.split('@')[1]?.toLowerCase().trim() : sender.toLowerCase().trim();
-      const isBankDomain = senderDomain.endsWith('.bank.in') || senderDomain === 'bank.in' || sender === 'TEST' || senderDomain === 'hdfcbank.net';
+      const isBankDomain =
+        senderDomain.endsWith('.bank.in') ||
+        senderDomain.endsWith('.fin.in') ||
+        senderDomain === 'bank.in' ||
+        senderDomain === 'fin.in' ||
+        sender === 'TEST' ||
+        Array.from(KNOWN_BANK_DOMAINS).some(root => senderDomain === root || senderDomain.endsWith('.' + root));
       isNotLegitimateBank = !isBankDomain || isAttributableToCustomer;
     } else {
       isNotLegitimateBank = true;
