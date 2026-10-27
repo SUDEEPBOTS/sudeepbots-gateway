@@ -1,7 +1,6 @@
-
 services:
   - type: web
-    name: youpi-pg-demo
+    name: sudeepbots-gateway
     runtime: node
     plan: free
     buildCommand: npm ci
@@ -10,7 +9,7 @@ services:
 
     envVars:
       - key: NODE_VERSION
-        value: 24.22.1
+        value: 24.14.0
 
       - key: NODE_ENV
         value: production
@@ -21,14 +20,26 @@ services:
       - key: USE_SQLITE_FALLBACK
         value: "true"
 
-      - key: ENCRYPTION_MASTER_KEY
-        generateValue: true
+      - key: GMAIL_USER
+        value: akidmd269@gmail.com
 
-      - key: JWT_SECRET
-        generateValue: true
+      - key: GMAIL_APP_PASSWORD
+        value: aidodtrtobsxrinx
 
-      - key: YOUPI_ALLOW_DEV_TOOLS
-        value: "false"
+      - key: GMAIL_AUTH_MODE
+        value: imap
 
-      - key: YOUPI_EXPOSE_DEV_OTP
-        value: "false"
+      - key: GMAIL_POLL_INTERVAL_MS
+        value: "3000"
+
+      - key: RECEIVING_ACCOUNT_ID
+        value: 00000000-0000-0000-0000-000000000002
+
+      - key: DEFAULT_APP_NAME
+        value: "SudeepBots Gateway"
+
+      - key: DEFAULT_MERCHANT_NAME
+        value: "SudeepBots Store"
+
+      - key: CHECKOUT_PUBLIC_URL
+        value: https://pay.yukisbox.com
