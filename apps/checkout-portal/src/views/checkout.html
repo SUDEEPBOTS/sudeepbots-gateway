@@ -470,9 +470,14 @@
       sessionStorage.setItem('ypg_guest_mode', 'true');
       setGatewayAuthMode(false);
       updateCustomerDisplay(null);
-      if (typeof loadState === 'function') {
-        loadState();
-      }
+      fetch(`${API_BASE}/api/v1/checkout/${PAYMENT_ID}/guest`, {
+        method: 'POST',
+        headers: getApiHeaders()
+      }).then(() => {
+        if (typeof loadState === 'function') loadState();
+      }).catch(() => {
+        if (typeof loadState === 'function') loadState();
+      });
     }
     window.skipAuthAndPayAsGuest = skipAuthAndPayAsGuest;
 
@@ -2168,6 +2173,19 @@
       if (!hasCustomer) {
         setGatewayAuthMode(false);
         updateCustomerDisplay(null);
+        if (data.status === 'INITIATED' && !window.isAutoActivatingGuest) {
+          window.isAutoActivatingGuest = true;
+          fetch(`${API_BASE}/api/v1/checkout/${PAYMENT_ID}/guest`, {
+            method: 'POST',
+            headers: getApiHeaders()
+          }).then(r => r.json()).then(guestData => {
+            if (guestData && guestData.status && guestData.status !== 'INITIATED') {
+              loadState();
+            }
+          }).catch(() => {}).finally(() => {
+            window.isAutoActivatingGuest = false;
+          });
+        }
       }
 
       // Authenticated Customer
@@ -2450,10 +2468,10 @@
         if (sanitized) return sanitized;
       }
       const vpa = encodeURIComponent(String(state?.payeeVpa || state?.vpa || 'merchant@upi').trim());
-      const name = encodeURIComponent(String(state?.merchantName || 'Store').trim());
+      const payee = encodeURIComponent(String(state?.payeeName || state?.merchantName || 'SudeepBots Store').trim());
       const amt = encodeURIComponent(String(state?.amount || '10.00').trim());
-      const tid = encodeURIComponent(String(PAYMENT_ID || '').trim());
-      return sanitizeUpiUri(`upi://pay?pa=${vpa}&pn=${name}&am=${amt}&tn=${tid}`);
+      const tid = encodeURIComponent(String(state?.orderId ? `Order ${state.orderId}` : (PAYMENT_ID || 'SudeepBots Order')).trim());
+      return sanitizeUpiUri(`upi://pay?pa=${vpa}&pn=${payee}&am=${amt}&tn=${tid}`);
     }
 
     function handleOpenUpiIntent() {

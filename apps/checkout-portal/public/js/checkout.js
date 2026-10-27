@@ -424,9 +424,14 @@
       sessionStorage.setItem('ypg_guest_mode', 'true');
       setGatewayAuthMode(false);
       updateCustomerDisplay(null);
-      if (typeof loadState === 'function') {
-        loadState();
-      }
+      fetch(`${API_BASE}/api/v1/checkout/${PAYMENT_ID}/guest`, {
+        method: 'POST',
+        headers: getApiHeaders()
+      }).then(() => {
+        if (typeof loadState === 'function') loadState();
+      }).catch(() => {
+        if (typeof loadState === 'function') loadState();
+      });
     }
     window.skipAuthAndPayAsGuest = skipAuthAndPayAsGuest;
 
@@ -2014,6 +2019,19 @@
       if (!hasCustomer) {
         setGatewayAuthMode(false);
         updateCustomerDisplay(null);
+        if (data.status === 'INITIATED' && !window.isAutoActivatingGuest) {
+          window.isAutoActivatingGuest = true;
+          fetch(`${API_BASE}/api/v1/checkout/${PAYMENT_ID}/guest`, {
+            method: 'POST',
+            headers: getApiHeaders()
+          }).then(r => r.json()).then(guestData => {
+            if (guestData && guestData.status && guestData.status !== 'INITIATED') {
+              loadState();
+            }
+          }).catch(() => {}).finally(() => {
+            window.isAutoActivatingGuest = false;
+          });
+        }
       }
 
       // Authenticated Customer

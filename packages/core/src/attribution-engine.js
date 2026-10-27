@@ -304,7 +304,7 @@ export class AttributionEngine {
     if (currentSession && currentSession.amountPaise !== normalizedObs.amountPaise) {
       const matchRows = this.sessionRepo.db.query(`
         SELECT * FROM payment_sessions
-        WHERE receiving_account_id = ? AND status IN ('ACTIVE', 'PROCESSING') AND amount_paise = ?
+        WHERE receiving_account_id = ? AND status IN ('ACTIVE', 'PROCESSING', 'INITIATED') AND amount_paise = ?
       `, [normalizedObs.receivingAccountId, Number(normalizedObs.amountPaise)]);
       if (matchRows.length > 1) {
         return this.holdAmbiguous(
@@ -324,7 +324,7 @@ export class AttributionEngine {
       const candidates = this.sessionRepo.db.query(`
         SELECT * FROM payment_sessions
         WHERE receiving_account_id = ?
-          AND status IN ('ACTIVE', 'PROCESSING')
+          AND status IN ('ACTIVE', 'PROCESSING', 'INITIATED')
           AND amount_paise = ?
       `, [normalizedObs.receivingAccountId, Number(normalizedObs.amountPaise)]);
       if (candidates.length > 1) {
@@ -340,8 +340,8 @@ export class AttributionEngine {
     }
 
     if (currentSession) {
-      // Invariant Check 1: Must be in ACTIVE or PROCESSING status
-      const isEligibleStatus = [PaymentStatus.ACTIVE, PaymentStatus.PROCESSING].includes(currentSession.status);
+      // Invariant Check 1: Must be in ACTIVE, PROCESSING, or INITIATED status
+      const isEligibleStatus = [PaymentStatus.ACTIVE, PaymentStatus.PROCESSING, PaymentStatus.INITIATED].includes(currentSession.status);
 
       // Invariant Check 2: Exact Amount Match (in integer paise)
       const isAmountMatch = currentSession.amountPaise === normalizedObs.amountPaise;

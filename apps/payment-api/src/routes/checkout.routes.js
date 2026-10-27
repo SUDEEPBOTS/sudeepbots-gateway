@@ -536,13 +536,15 @@ export function registerCheckoutRoutes(server, ctx) {
     }
 
     let upiUri = null;
-    if (session.status === PaymentStatus.ACTIVE && payeeVpa) {
+    if ([PaymentStatus.ACTIVE, PaymentStatus.INITIATED].includes(session.status) && payeeVpa) {
       try {
+        const cleanPayee = payeeName || merchant?.businessName || 'SudeepBots Store';
+        const cleanTxnRef = session.orderId || 'SudeepBots Order';
         upiUri = buildUpiUri({
           payeeVpa,
-          payeeName,
+          payeeName: cleanPayee,
           amountPaise: session.amountPaise,
-          transactionRef: session.orderId,
+          transactionRef: cleanTxnRef,
           currency: session.currency || 'INR'
         });
       } catch {
@@ -1038,6 +1040,73 @@ export function registerCheckoutRoutes(server, ctx) {
       queuePosition: updated.queuePosition || 0,
       expiresAt: updated.expiresAt,
       message: 'Previous active session cancelled. New payment session activated.'
+    });
+  });
+
+  // POST /api/v1/checkout/:id/guest (Activate payment session for instant guest checkout)
+  server.post('/api/v1/checkout/:id/guest', async (req, res, params) => {
+    const session = ctx.sessionRepo.findById(params.id);
+    if (!session) {
+      HttpServer.json(res, 404, { error: `Payment session not found: ${params.id}` });
+      return;
+    }
+
+    const deviceAccess = checkSessionDeviceAccess(session, req, null, ctx);
+    if (!deviceAccess.allowed) {
+      HttpServer.json(res, deviceAccess.statusCode || 409, deviceAccess.body);
+      return;
+    }
+
+    if (session.status === PaymentStatus.ACTIVE) {
+      const remaining = session.expiresAt ? Math.max(0, Math.ceil((session.expiresAt.getTime() - Date.now()) / 1000)) : 300;
+      HttpServer.json(res, 200, {
+        success: true,
+        paymentId: session.id,
+        status: PaymentStatus.ACTIVE,
+        timeRemainingSeconds: remaining,
+        expiresAt: session.expiresAt
+      });
+      return;
+    }
+
+    if (session.status === PaymentStatus.INITIATED) {
+      const activeMerchantAcc = ctx.accountRepo ? ctx.accountRepo.findActiveForMerchant(session.merchantId) : null;
+      const targetAccountId = activeMerchantAcc?.id || session.receivingAccountId || session.metadata?.receivingAccountSnapshot?.id;
+      if (targetAccountId && session.receivingAccountId !== targetAccountId) {
+        ctx.db.execute('UPDATE payment_sessions SET receiving_account_id = ? WHERE id = ?', [targetAccountId, session.id]);
+        session.receivingAccountId = targetAccountId;
+      }
+
+      let queueResult = { status: session.status, queuePosition: 0, expiresAt: null };
+      if (targetAccountId) {
+        queueResult = ctx.queueEngine.enqueueOrActivate(session.id, targetAccountId, ctx.timingEngine?.activeDurationMs || 300000);
+        if (queueResult.expiresAt && ctx.timingEngine) {
+          ctx.timingEngine.startActiveTimer(session.id, queueResult.expiresAt);
+        }
+        server.broadcastSse(session.id, 'status_change', {
+          status: queueResult.status,
+          queuePosition: queueResult.queuePosition,
+          expiresAt: queueResult.expiresAt
+        });
+      }
+
+      const updated = ctx.sessionRepo.findById(session.id);
+      const remaining = updated.expiresAt ? Math.max(0, Math.ceil((updated.expiresAt.getTime() - Date.now()) / 1000)) : 300;
+      HttpServer.json(res, 200, {
+        success: true,
+        paymentId: updated.id,
+        status: updated.status,
+        timeRemainingSeconds: remaining,
+        expiresAt: updated.expiresAt
+      });
+      return;
+    }
+
+    HttpServer.json(res, 200, {
+      success: true,
+      paymentId: session.id,
+      status: session.status,
+      timeRemainingSeconds: 0
     });
   });
 

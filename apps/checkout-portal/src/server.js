@@ -411,7 +411,9 @@ export class CheckoutServer {
       if (qrMatch) {
         const paymentId = qrMatch[1];
         const state = await this.fetchPaymentState(paymentId);
-        const upiUri = state?.upiUri || `upi://pay?pa=${encodeURIComponent(state?.payeeVpa || 'merchant@upi')}&pn=${encodeURIComponent(state?.merchantName || 'Store')}&am=${encodeURIComponent(state?.amount || '100.00')}&tn=${encodeURIComponent(paymentId)}`;
+        const orderRef = state?.orderId ? `Order ${state.orderId}` : 'SudeepBots Order';
+        const payee = state?.payeeName || state?.merchantName || 'SudeepBots Store';
+        const upiUri = state?.upiUri || `upi://pay?pa=${encodeURIComponent(state?.payeeVpa || 'merchant@upi')}&pn=${encodeURIComponent(payee)}&am=${encodeURIComponent(state?.amount || '100.00')}&tn=${encodeURIComponent(orderRef)}`;
 
         const svg = generateQrSvg(upiUri, 220);
         res.writeHead(200, {
