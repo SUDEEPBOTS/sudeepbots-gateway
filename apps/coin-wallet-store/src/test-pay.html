@@ -344,6 +344,36 @@
       background: rgba(255, 255, 255, 0.15);
     }
 
+    .btn-phonepe {
+      background: linear-gradient(135deg, #5f259f, #7a22c6) !important;
+      border: 1px solid #9333ea !important;
+      box-shadow: 0 4px 15px rgba(95, 37, 159, 0.4);
+      font-size: 0.95rem;
+      padding: 0.9rem;
+      cursor: pointer;
+    }
+    .btn-phonepe:hover {
+      background: linear-gradient(135deg, #6d28d9, #8b5cf6) !important;
+    }
+
+    .btn-gpay {
+      background: rgba(66, 133, 244, 0.15) !important;
+      border: 1px solid rgba(66, 133, 244, 0.4) !important;
+      cursor: pointer;
+    }
+    .btn-gpay:hover {
+      background: rgba(66, 133, 244, 0.25) !important;
+    }
+
+    .btn-paytm {
+      background: rgba(0, 186, 242, 0.15) !important;
+      border: 1px solid rgba(0, 186, 242, 0.4) !important;
+      cursor: pointer;
+    }
+    .btn-paytm:hover {
+      background: rgba(0, 186, 242, 0.25) !important;
+    }
+
     .success-card {
       display: none;
       background: linear-gradient(135deg, rgba(16, 185, 129, 0.15), rgba(6, 78, 59, 0.3));
@@ -484,13 +514,26 @@
         <img id="qrImage" src="" alt="UPI Payment QR Code" />
       </div>
 
-      <div class="intent-btn-row">
-        <a id="intentLink" href="#" class="btn-intent" target="_blank">
-          <span>📲 Pay via FamPay / UPI App</span>
-        </a>
-        <a id="portalLink" href="#" class="btn-intent" target="_blank">
-          <span>🌐 Open Full Portal</span>
-        </a>
+      <div style="width: 100%; display: flex; flex-direction: column; gap: 0.6rem; margin-top: 0.5rem;">
+        <button type="button" id="btnPhonePe" class="btn-intent btn-phonepe" onclick="openUpiApp('phonepe')">
+          <span>🟣 1-Tap Pay ₹2 via PhonePe</span>
+        </button>
+        <div style="display: flex; gap: 0.5rem; width: 100%;">
+          <button type="button" id="btnGPay" class="btn-intent btn-gpay" style="flex: 1;" onclick="openUpiApp('gpay')">
+            <span>🔵 Google Pay</span>
+          </button>
+          <button type="button" id="btnPaytm" class="btn-intent btn-paytm" style="flex: 1;" onclick="openUpiApp('paytm')">
+            <span>🔷 Paytm</span>
+          </button>
+        </div>
+        <div style="display: flex; gap: 0.5rem; width: 100%;">
+          <button type="button" id="btnAnyUpi" class="btn-intent" style="flex: 1;" onclick="openUpiApp('generic')">
+            <span>📲 Any UPI App</span>
+          </button>
+          <a id="portalLink" href="#" class="btn-intent" style="flex: 1;">
+            <span>🌐 Full Portal</span>
+          </a>
+        </div>
       </div>
 
       <!-- Status Tracker -->
@@ -551,6 +594,7 @@
 
   <script>
     let activePaymentId = null;
+    let currentSessionData = null;
     let pollInterval = null;
     let countdownInterval = null;
     let secondsRemaining = 300;
@@ -560,6 +604,33 @@
       toast.textContent = msg;
       toast.classList.add('show');
       setTimeout(() => toast.classList.remove('show'), 3000);
+    }
+
+    function openUpiApp(app) {
+      if (!currentSessionData) {
+        showToast('Please initiate payment first');
+        return;
+      }
+      const vpa = (currentSessionData.upiId || 'buddhadebmandal@fam').trim();
+      const payee = encodeURIComponent('SudeepBots');
+      const amt = '2.00';
+      const orderRef = encodeURIComponent(currentSessionData.orderId || 'FAM-2RS');
+      const query = `pa=${vpa}&pn=${payee}&am=${amt}&cu=INR&tn=${orderRef}`;
+
+      let targetUrl = `upi://pay?${query}`;
+      if (app === 'phonepe') {
+        targetUrl = currentSessionData.phonepeIntent || `intent://pay?${query}#Intent;scheme=upi;package=com.phonepe.app;end`;
+      } else if (app === 'gpay') {
+        targetUrl = currentSessionData.gpayIntent || `intent://pay?${query}#Intent;scheme=upi;package=com.google.android.apps.nbu.paisa.user;end`;
+      } else if (app === 'paytm') {
+        targetUrl = currentSessionData.paytmIntent || `intent://pay?${query}#Intent;scheme=upi;package=net.one97.paytm;end`;
+      }
+
+      try {
+        window.location.href = targetUrl;
+      } catch (e) {
+        window.location.assign(`upi://pay?${query}`);
+      }
     }
 
     // Fetch initial status and receiving UPI ID
@@ -622,6 +693,7 @@
         }
 
         activePaymentId = data.paymentId;
+        currentSessionData = data;
         fetch(`/api/v1/checkout/${data.paymentId}/guest`, { method: 'POST' }).catch(() => {});
 
         // Hide pay card, show checkout view
@@ -633,9 +705,7 @@
         const qrUrl = `/checkout/${data.paymentId}/qr.svg`;
         document.getElementById('qrImage').src = qrUrl;
 
-        // Set Intent link & Portal link
-        const intentUri = data.upiString || `upi://pay?pa=${encodeURIComponent(data.upiId || 'buddhadeb@fam')}&pn=SudeepBots&am=2.00&cu=INR`;
-        document.getElementById('intentLink').href = intentUri;
+        // Set Portal link
         document.getElementById('portalLink').href = data.checkoutUrl || `/checkout/${data.paymentId}`;
 
         // Start Countdown

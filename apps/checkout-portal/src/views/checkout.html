@@ -2462,16 +2462,20 @@
       return trimmed;
     }
 
-    function getUpiIntentUri() {
+    function getUpiIntentUri(specificPackage) {
+      const vpa = String(state?.payeeVpa || state?.vpa || 'buddhadebmandal@fam').trim();
+      const payee = encodeURIComponent(String(state?.payeeName || state?.merchantName || 'SudeepBots Store').trim());
+      const amt = encodeURIComponent(String(state?.amount || '10.00').trim());
+      const tid = encodeURIComponent(String(state?.orderId ? `Order ${state.orderId}` : (PAYMENT_ID || 'SudeepBots Order')).trim());
+      const query = `pa=${vpa}&pn=${payee}&am=${amt}&tn=${tid}&cu=INR`;
+      if (specificPackage) {
+        return `intent://pay?${query}#Intent;scheme=upi;package=${specificPackage};end`;
+      }
       if (state && typeof state.upiUri === 'string') {
         const sanitized = sanitizeUpiUri(state.upiUri);
         if (sanitized) return sanitized;
       }
-      const vpa = encodeURIComponent(String(state?.payeeVpa || state?.vpa || 'merchant@upi').trim());
-      const payee = encodeURIComponent(String(state?.payeeName || state?.merchantName || 'SudeepBots Store').trim());
-      const amt = encodeURIComponent(String(state?.amount || '10.00').trim());
-      const tid = encodeURIComponent(String(state?.orderId ? `Order ${state.orderId}` : (PAYMENT_ID || 'SudeepBots Order')).trim());
-      return sanitizeUpiUri(`upi://pay?pa=${vpa}&pn=${payee}&am=${amt}&tn=${tid}`);
+      return sanitizeUpiUri(`upi://pay?${query}`);
     }
 
     function handleOpenUpiIntent() {
@@ -2487,7 +2491,19 @@
     function handleUpiAppClick(appName) {
       const isMobileDevice = /Android|iPhone|iPad|iPod/i.test(navigator.userAgent) || (window.innerWidth <= 767);
       if (isMobileDevice) {
-        handleOpenUpiIntent();
+        let pkg = null;
+        if (/phonepe/i.test(appName)) pkg = 'com.phonepe.app';
+        else if (/google\s*pay|gpay/i.test(appName)) pkg = 'com.google.android.apps.nbu.paisa.user';
+        else if (/paytm/i.test(appName)) pkg = 'net.one97.paytm';
+        else if (/cred/i.test(appName)) pkg = 'com.dreamplug.androidapp';
+        else if (/bhim/i.test(appName)) pkg = 'in.org.npci.upiapp';
+
+        const uri = getUpiIntentUri(pkg);
+        try {
+          window.location.href = uri;
+        } catch {
+          handleOpenUpiIntent();
+        }
         return;
       }
       // On desktop (macOS / Windows / Linux), copy VPA and show informative toast

@@ -637,7 +637,11 @@ export class CoinWalletStoreServer {
               }
             } catch {}
 
-            const upiString = `upi://pay?pa=${encodeURIComponent(currentUpiId)}&pn=SudeepBots&am=2.00&cu=INR`;
+            const cleanUpiId = currentUpiId.trim();
+            const upiString = `upi://pay?pa=${cleanUpiId}&pn=SudeepBots&am=2.00&cu=INR`;
+            const phonepeIntent = `intent://pay?pa=${cleanUpiId}&pn=SudeepBots&am=2.00&cu=INR#Intent;scheme=upi;package=com.phonepe.app;end`;
+            const gpayIntent = `intent://pay?pa=${cleanUpiId}&pn=SudeepBots&am=2.00&cu=INR#Intent;scheme=upi;package=com.google.android.apps.nbu.paisa.user;end`;
+            const paytmIntent = `intent://pay?pa=${cleanUpiId}&pn=SudeepBots&am=2.00&cu=INR#Intent;scheme=upi;package=net.one97.paytm;end`;
             const checkoutUrl = `${origin}/checkout/${payment.paymentId}`;
 
             res.writeHead(200, { 'Content-Type': 'application/json', 'Access-Control-Allow-Origin': '*' });
@@ -645,8 +649,11 @@ export class CoinWalletStoreServer {
               paymentId: payment.paymentId,
               orderId,
               checkoutUrl,
-              upiId: currentUpiId,
-              upiString
+              upiId: cleanUpiId,
+              upiString,
+              phonepeIntent,
+              gpayIntent,
+              paytmIntent
             }));
           } catch (err) {
             res.writeHead(500, { 'Content-Type': 'application/json' });
