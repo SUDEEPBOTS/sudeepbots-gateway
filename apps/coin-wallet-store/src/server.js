@@ -621,7 +621,6 @@ export class CoinWalletStoreServer {
               orderId,
               amount,
               currency: 'INR',
-              autoActivate: true,
               returnUrl: `${origin}/pay-test?orderId=${encodeURIComponent(orderId)}`,
               metadata: { testNote: 'FamPay 2rs verification test' }
             });
