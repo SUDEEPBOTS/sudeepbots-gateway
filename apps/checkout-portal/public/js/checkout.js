@@ -2092,10 +2092,30 @@
 
           const btnContinue = document.getElementById('btnContinuePayment');
 
-          const remainingSec = (data.timeRemainingSeconds !== undefined && data.timeRemainingSeconds !== null) ? Number(data.timeRemainingSeconds) : 300;
+          if (data.status === 'INITIATED') {
+            const tText = document.getElementById('activeTimerText');
+            if (tText && (tText.textContent === 'Expired' || !tText.textContent)) tText.textContent = '05:00';
+            if (btnContinue) btnContinue.style.display = 'none';
+
+            runCountdown(300, sec => {
+              const el = document.getElementById('activeTimerText');
+              if (el) el.textContent = formatTime(sec);
+              if (sec <= 240 && btnContinue) {
+                btnContinue.style.display = 'block';
+              }
+            }, () => {
+              const el = document.getElementById('activeTimerText');
+              if (el) el.textContent = 'Expired';
+            }, new Date(Date.now() + 300 * 1000).toISOString());
+            return;
+          }
+
+          const remainingSec = (data.timeRemainingSeconds !== undefined && data.timeRemainingSeconds !== null && Number(data.timeRemainingSeconds) > 0)
+            ? Number(data.timeRemainingSeconds)
+            : (data.expiresAt ? Math.max(0, Math.ceil((new Date(data.expiresAt).getTime() - Date.now()) / 1000)) : 300);
           const targetExpiry = data.expiresAt || new Date(Date.now() + remainingSec * 1000).toISOString();
 
-          if (remainingSec <= 0 && data.status === 'ACTIVE') {
+          if (remainingSec <= 0 && data.status === 'ACTIVE' && data.expiresAt) {
             const tText = document.getElementById('activeTimerText');
             if (tText) tText.textContent = 'Expired';
             if (btnContinue) btnContinue.style.display = 'none';

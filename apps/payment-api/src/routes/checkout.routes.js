@@ -384,30 +384,18 @@ export async function checkUpiServerHealth(ctx, enabledMethods = [], sellingMode
     ? enabledMethods.includes('COD')
     : enabledMethods.includes('CASH_COUNTER');
 
-  if (smsHealthy && gmailHealthy) {
+  if (smsHealthy || gmailHealthy) {
     return {
       status: 'WORKING',
       tier: 'GREEN',
       label: 'Server Is Working',
       isWorking: true,
-      reason: 'All observers active: Gmail OAuth polling & SMS Gateway connected',
-      smsHealthy: true,
-      gmailHealthy: true,
-      warning: null,
-      recommendedAlternative: null
-    };
-  }
-
-  if (smsHealthy || gmailHealthy) {
-    return {
-      status: 'BUSY',
-      tier: 'YELLOW',
-      label: 'UPI Server Busy',
-      isWorking: true,
-      reason: smsHealthy ? 'SMS observer active, Gmail observer offline' : 'Gmail observer active, SMS observer offline',
+      reason: (smsHealthy && gmailHealthy)
+        ? 'All observers active: Gmail & SMS Gateway connected'
+        : (gmailHealthy ? 'Gmail / FamPay observer active & connected' : 'SMS Gateway active'),
       smsHealthy,
       gmailHealthy,
-      warning: 'Your payment may go through extra processing seconds.',
+      warning: null,
       recommendedAlternative: null
     };
   }
